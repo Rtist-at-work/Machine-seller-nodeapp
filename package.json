@@ -1,0 +1,29 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "\" A Platform to connect second hand retailors and buyers\"",
+  "keywords": [
+    "[\"nodejs\"",
+    "\"express\"",
+    "\"rest-api\"",
+    "\"backend\"]"
+  ],
+  "homepage": "https://github.com/Rtist-at-work/Machine-seller#readme",
+  "bugs": {
+    "url": "https://github.com/Rtist-at-work/Machine-seller/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rtist-at-work/Machine-seller.git"
+  },
+  "license": "ISC",
+  "author": "Rtist",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "\"jest\""
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
