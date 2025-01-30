@@ -11,12 +11,12 @@ const connect = async ()=>{
         });
     }
     catch(err){
-        return(
-            res.status(500).json({
-                message:"Server not supporting",
-                error : err
-            })
-        )       
+        // return(
+        //     res.status(500).json({
+        //         message:"Server not supporting",
+        //         error : err
+        //     })
+        // )       
     }
 }
 
