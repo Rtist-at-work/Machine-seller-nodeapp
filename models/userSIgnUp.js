@@ -15,21 +15,23 @@ const userSchema = new mongoose.Schema({
         type : String,
         required : [true,'Password Must be create'],
         minlength : [8, 'Password must be at least 3 characters long'],
-        match : [/^[A-Za-z0-9]*$/],
     },
-    email : {
+    Email : {
         type : String,
         unique : true,
         required :  [true,'email Must be create'],
         match : [/^[A-Za-z0-9+@+.]*$/, 'email cannot contain special characters'],
         lowercase: true,
+        index:true
     },
-    mobile: {
+    Mobile: {
         type: String,
         required: true,
         minlength: [10, 'Mobile number must be at least 10 digits'],
         maxlength: [15, 'Mobile number must be at most 15 digits'],  // You can adjust the max length if needed
         match: [/^\+?\d{1,4}?\d{10}$/, 'Mobile number must be in a valid format, with or without country code'],
+        index:true
+
     },    
     Location : {
         type : String,
@@ -44,6 +46,6 @@ const userSchema = new mongoose.Schema({
     timestamps : true,
 })
 
-const user = mongoose.model('user',userSchema)
+const users = mongoose.model('user',userSchema)
 
-module.exports = user
+module.exports = users

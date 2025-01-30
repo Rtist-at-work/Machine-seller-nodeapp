@@ -3,26 +3,28 @@ const usermodel = require("../models/userSIgnUp");
 const bcrypt = require("bcrypt");
 const router = express.Router();
 
-// router.get('/login',(req,res)=>{
+router.post('/',(req,res)=>{
+    res.json({message:"ok"})
+})
 
-const login = async () => {
-  let emailormobile = "tail";
-  const password = "Ch6is8in";
-//   try {
-    const email1 = new RegExp(/^[a-zA-z0-9+@+.]*\S$/);
-    const mobile = new RegExp(/^\+?\d{1,4}?\d{10}$/);
+// const login = async () => {
+//   let emailormobile = "tail";
+//   const password = "Ch6is8in";
+// //   try {
+//     const email1 = new RegExp(/^[a-zA-z0-9+@+.]*\S$/);
+//     const mobile = new RegExp(/^\+?\d{1,4}?\d{10}$/);
     
-    if (mobile.test(emailormobile)) {
-        console.log("email")
-        emailormobile = "email1";
-    } else if (email1.test(emailormobile)) {
-        console.log("mobile")
-        emailormobile = "mobile";
-    }
-    else{
-        console.log("jjj")
-    }
-    console.log(emailormobile)
+//     if (mobile.test(emailormobile)) {
+//         console.log("email")
+//         emailormobile = "email1";
+//     } else if (email1.test(emailormobile)) {
+//         console.log("mobile")
+//         emailormobile = "mobile";
+//     }
+//     else{
+//         console.log("jjj")
+//     }
+//     console.log(emailormobile)
 //     const user = await usermodel.collection.findOne({ email });
 
 //     if (user) {
@@ -52,8 +54,8 @@ const login = async () => {
 //     // })
 //     console.log(err);
 //   }
-};
+// };
 
 // })
 
-module.exports = login;
+module.exports = router;
