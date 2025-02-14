@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
         unique : true,
         index : true
     },
-    Username : {
+    username : {
         type : String,
         required : [true,'Create your username'],
         minlength : [3, 'Username must be at least 3 characters long'],
@@ -19,25 +19,19 @@ const userSchema = new mongoose.Schema({
     Email : {
         type : String,
         unique : true,
-        required :  [true,'email Must be create'],
         match : [/^[A-Za-z0-9+@+.]*$/, 'email cannot contain special characters'],
         lowercase: true,
-        index:true
+        index:true,
+        sparse : true
     },
     Mobile: {
         type: String,
-        required: true,
         minlength: [10, 'Mobile number must be at least 10 digits'],
         maxlength: [15, 'Mobile number must be at most 15 digits'],  // You can adjust the max length if needed
         match: [/^\+?\d{1,4}?\d{10}$/, 'Mobile number must be in a valid format, with or without country code'],
-        index:true
-
-    },    
-    Location : {
-        type : String,
-        required : true,
-
-    },
+        index:true,
+        sparse:true
+    },      
     createdAt : { 
         type : Date,
         default : Date.now,

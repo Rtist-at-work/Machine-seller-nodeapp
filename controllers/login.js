@@ -1,6 +1,5 @@
 const express = require("express");
 const usermodel = require("../models/userSIgnUp");
-const bcrypt = require("bcrypt");
 const router = express.Router();
 
 router.post('/',(req,res)=>{
