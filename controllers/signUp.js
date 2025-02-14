@@ -83,10 +83,11 @@ const getCache = (req, res, next) => {
   next();
 };
 
-// Routes
+// Routes 
 router.post("/", mobileOrEmailCheck, async (req, res) => {
   const { mailOrphone, username } = req.body;
 
+  console.log("ok")
   const allCachedData = myCache.keys().reduce((acc, key) => {
     acc[key] = myCache.get(key);
     return acc;
