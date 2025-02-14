@@ -47,8 +47,6 @@ const sendEmailOTP = async (email, otp) => {
 const mobileOrEmailCheck = (req, res, next) => {
   const { mailOrphone } = req.body;
 
-  console.log(emailRegex.test(mailOrphone) )
-
   if (!emailRegex.test(mailOrphone) && !mobileRegex.test(mailOrphone)) {
     return res.status(400).json({ message: "Enter a valid email or mobile number" });
   }

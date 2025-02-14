@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
     username : {
         type : String,
         required : [true,'Create your username'],
-        minlength : [3, 'Username must be at least 3 characters long'],
+        minlength : [3, 'Username must be at least 3 characters long.'],
     },
     Password : {
         type : String,
@@ -39,7 +39,7 @@ const userSchema = new mongoose.Schema({
 },{
     timestamps : true,
 })
-
+//ok
 const users = mongoose.model('user',userSchema)
 
 module.exports = users
