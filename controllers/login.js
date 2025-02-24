@@ -1,60 +1,45 @@
 const express = require("express");
+const bcrypt = require("bcryptjs");
 const usermodel = require("../models/userSIgnUp");
+const mobileOrEmailCheck = require("../middlewares/mobileOrEmailCheck");
 const router = express.Router();
 
-router.post('/',(req,res)=>{
-    res.json({message:"ok"})
-})
+router.post("/", mobileOrEmailCheck, async (req, res) => {
+  try {
+    const { mailOrphone, password } = req.body;
 
-// const login = async () => {
-//   let emailormobile = "tail";
-//   const password = "Ch6is8in";
-// //   try {
-//     const email1 = new RegExp(/^[a-zA-z0-9+@+.]*\S$/);
-//     const mobile = new RegExp(/^\+?\d{1,4}?\d{10}$/);
-    
-//     if (mobile.test(emailormobile)) {
-//         console.log("email")
-//         emailormobile = "email1";
-//     } else if (email1.test(emailormobile)) {
-//         console.log("mobile")
-//         emailormobile = "mobile";
-//     }
-//     else{
-//         console.log("jjj")
-//     }
-//     console.log(emailormobile)
-//     const user = await usermodel.collection.findOne({ email });
+    // Search for user by email/mobile
+    const user = await usermodel.collection.findOne({ [req.recipient]: mailOrphone });
+    console.log(user)
 
-//     if (user) {
-//       const isMatch = bcrypt.compare(password, user.Password);
-//       if (isMatch) {
-//         console.log("Logged In Successfully");
-//         // res.status(200).json({
-//         //     message : "Logged In Successfully",
-//         // })
-//       } else {
-//         console.log("Invalid Password");
-//         // res.status(401).json({
-//         //     message : "Invalid Password",
-//         // })
-//       }
-//     } else {
-//       console.log("user not found");
-//       // res.status(401).json({
-//       //     message : "user not found",
-//       // })
-//     }
-//   } catch (err) {
-//     // res.json({
-//     //     ststus : "error",
-//     //     message : "An Error Occured",
-//     //     error : err
-//     // })
-//     console.log(err);
-//   }
-// };
-
-// })
+    // Check if user exists and password matches
+    if (user) {
+      const isMatch = await bcrypt.compare(password, user.Password); // compare password with hashed password
+      if (isMatch) {
+        console.log("Logged In Successfully");
+        res.status(200).json({
+          message: "Logged In Successfully",
+        });
+      } else {
+        console.log("Invalid Password");
+        res.status(401).json({
+          message: "Invalid Password",
+        });
+      }
+    } else {
+      console.log("User not found");
+      res.status(404).json({
+        message: "User not found",
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "An error occurred",
+      error: err.message,
+    });
+  }
+});
 
 module.exports = router;

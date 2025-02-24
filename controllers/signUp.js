@@ -1,8 +1,9 @@
 const express = require("express");
 const nodemailer = require("nodemailer");
 const NodeCache = require("node-cache");
-const { parsePhoneNumberFromString } = require("libphonenumber-js");
 const user = require("../models/userSIgnUp");
+const mobileOrEmailCheck = require('../middlewares/mobileOrEmailCheck')
+const gg = require('../models/categoryCreation')
 const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
@@ -12,9 +13,6 @@ const myCache = new NodeCache({ stdTTL: 60 });
 // Utility Functions
 const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
 
-const emailRegex =
-    /^[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*@gmail\.com$|^[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*@gmail\.co$/;
-const mobileRegex = /^\d{10}$/;
 
 // Nodemailer Transporter
 const transporter = nodemailer.createTransport({
@@ -43,17 +41,7 @@ const sendEmailOTP = async (email, otp) => {
   }
 };
 
-// Middleware to validate and identify recipient type
-const mobileOrEmailCheck = (req, res, next) => {
-  const { mailOrphone } = req.body;
 
-  if (!emailRegex.test(mailOrphone) && !mobileRegex.test(mailOrphone)) {
-    return res.status(400).json({ message: "Enter a valid email or mobile number" });
-  }
-
-  req.recipient = emailRegex.test(mailOrphone) ? "Email" : "Mobile";
-  next();
-};
 
 // Cache Helper Functions
 const cacheStore = async (username, recipient, mailOrphone, otp) => {
@@ -70,36 +58,40 @@ const cacheStore = async (username, recipient, mailOrphone, otp) => {
 const getCache = (req, res, next) => {
   const { mailOrphone } = req.body;
   const cachedData = myCache.get(mailOrphone);
+  console.log(cachedData);
 
   if (!myCache.has(mailOrphone)) {
-    return res.status(404).json({ message: "Email or phone number not found in cache." });
+    return res
+      .status(404)
+      .json({ message: "Email or phone number not found in cache." });
   } else if (!cachedData) {
     return res.status(410).json({ message: "OTP has expired." });
   }
 
   req.user = cachedData;
+  console.log(req.user);
   next();
 };
 
-// Routes 
+// Routes
 router.post("/", mobileOrEmailCheck, async (req, res) => {
   const { mailOrphone, username } = req.body;
 
-  console.log("ok")
-  const allCachedData = myCache.keys().reduce((acc, key) => {
-    acc[key] = myCache.get(key);
-    return acc;
-  }, {});  
-  
-  const existingUser = await user.findOne({ [req.recipient] : mailOrphone });
+  const existingUser = await user.findOne({ [req.recipient]: mailOrphone });
   if (existingUser) {
-    return res.status(400).json({ error: 'Email already exists. Please log in.' });
+    return res
+      .status(400)
+      .json({ message: "Email already exists. Please log in." });
   }
-  console.log(existingUser + "nok")
 
   try {
     const otp = generateOTP();
-    const response = await cacheStore(username, req.recipient, mailOrphone, otp);
+    const response = await cacheStore(
+      username,
+      req.recipient,
+      mailOrphone,
+      otp
+    );
 
     if (response.success) {
       return res.status(200).json({
@@ -113,22 +105,40 @@ router.post("/", mobileOrEmailCheck, async (req, res) => {
     }
   } catch (err) {
     console.error("Error in sending OTP:", err);
-    return res.status(500).json({ message: "Error in sending OTP", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Error in sending OTP", error: err.message });
   }
 });
+router.post("/otpcheck", mobileOrEmailCheck, getCache, async (req, res) => {
+  try {
+    const { otp, mailOrphone } = req.body;
+    console.log(otp, mailOrphone);
+    // Validate input
+    if (!otp || !mailOrphone) {
+      console.error("Missing OTP or email/mobile.");
+      return res
+        .status(400)
+        .json({ message: "OTP and email/mobile are required." });
+    }
 
-router.post("/otpcheck",mobileOrEmailCheck, getCache, async (req, res) => {
-  const { otp, mailOrphone } = req.body;
-
-
-  if (!otp || !mailOrphone) {
-    return res.status(400).json({ message: "OTP and email/mobile are required" });
-  }
-
-  if (req.user && mailOrphone === req.user[req.recipient] && otp === req.user.OTP) {
-    return res.status(200).json({ message: "OTP verification successful" });
-  } else {
-    return res.status(500).json({ message: "OTP verification failed" });
+    // Check OTP and mailOrphone against user data
+    if (
+      req.user &&
+      mailOrphone === req.user[req.recipient] &&
+      otp === req.user.OTP
+    ) {
+      console.log("OTP verification successful.");
+      return res.status(200).json({ message: "OTP verification successful." });
+    } else {
+      return res.status(401).json({ message: "OYP verfication failed" });
+    }
+  } catch (error) {
+    // Handle unexpected errors
+    console.error("Error during OTP verification:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error. Please try again later." });
   }
 });
 
@@ -136,9 +146,16 @@ router.post("/resendotp", mobileOrEmailCheck, getCache, async (req, res) => {
   try {
     const { mailOrphone } = req.body;
     const newOtp = generateOTP();
-    const response = await cacheStore(req.user.username, req.recipient, mailOrphone, newOtp);
+    const response = await cacheStore(
+      req.user.username,
+      req.recipient,
+      mailOrphone,
+      newOtp
+    );
+    console.log(mailOrphone);
 
     if (response.success) {
+      console.log("ok");
       return res.status(200).json({
         message: response.message,
         [req.recipient]: mailOrphone,
@@ -146,28 +163,31 @@ router.post("/resendotp", mobileOrEmailCheck, getCache, async (req, res) => {
         OTP: newOtp,
       });
     } else {
+      console.log(error);
       throw new Error(response.error);
     }
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "Internal server error", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: err.message });
   }
 });
 
-
 router.post("/register", async (req, res) => {
+  console.log("final step");
   try {
-    const { password, confirmPassword, mailOrphone } = req.body;
-
+    const { password, confirmpass, mailOrphone } = req.body;
+    console.log(password, confirmpass, mailOrphone);
     // Validate input
-    if (!password || !confirmPassword || !mailOrphone) {
+    if (!password || !confirmpass || !mailOrphone) {
       return res.status(400).json({
         message: "Password, confirm password, and email/phone are required.",
       });
     }
 
     // Check if passwords match
-    if (password !== confirmPassword) {
+    if (password !== confirmpass) {
       return res
         .status(400)
         .json({ message: "Password and confirm password do not match." });
@@ -176,14 +196,14 @@ router.post("/register", async (req, res) => {
     // Check if cache exists for the provided email or phone
     const cachedUser = myCache.get(mailOrphone);
     if (!cachedUser) {
-      return res
-        .status(404)
-        .json({ message: "No cached data found for the provided email/phone." });
+      return res.status(404).json({
+        message: "No cached data found for the provided email/phone.",
+      });
     }
 
     // Encrypt password
     const hashedPassword = await bcrypt.hash(password, 10);
-
+    console.log(hashedPassword);
     // Create user object
     const newUser = new user({
       username: cachedUser.username,
@@ -192,13 +212,13 @@ router.post("/register", async (req, res) => {
       Mobile: cachedUser.Mobile || null,
     });
 
-    myCache.del(`${cachedUser.Email}`)
+    myCache.del(`${cachedUser.Email}`);
 
     // Save to the database
     await newUser.save();
 
     // Success response
-    res.status(201).json({ message: "User registered successfully." });
+    res.status(200).json({ message: "User registered successfully." });
   } catch (err) {
     console.error("Error in user registration:", err);
     res.status(500).json({

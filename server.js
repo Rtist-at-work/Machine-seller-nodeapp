@@ -7,8 +7,8 @@ require('dotenv').config();
 //middlwares
 const signup = require('./controllers/signUp')
 const login = require('./controllers/login')
-
-
+const adminCategories = require('./controllers/Admin/categoryCreation')
+const productupload = require('./controllers/sell')
 const app = express();
 
 // const whitelist = ['http://localhost:5173',]; // Replace with your frontend IP and port
@@ -35,10 +35,12 @@ app.use(express.urlencoded({ extended: true })); // Allows parsing form data
 //connections
 connect(); //mongo 
 
-
+console.log("reached")
 // routes
 app.use('/signup', signup);
 app.use('/login', login);
+app.use('/adminCategories',adminCategories)
+app.use('/productupload',productupload)
 
 const PORT = process.env.PORT || 4000;  
 
