@@ -13,7 +13,6 @@ const myCache = new NodeCache({ stdTTL: 60 });
 // Utility Functions
 const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
 
-
 // Nodemailer Transporter
 const transporter = nodemailer.createTransport({
   service: "gmail",
