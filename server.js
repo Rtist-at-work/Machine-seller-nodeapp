@@ -3,13 +3,15 @@ const mongoose = require('mongoose');
 const connect = require('./db')
 const cors = require('cors')
 require('dotenv').config();
+const bodyParser = require("body-parser"); 
 
 //middlwares
 const signup = require('./controllers/signUp')
 const login = require('./controllers/login')
 const adminCategories = require('./controllers/Admin/categoryCreation')
-const productupload = require('./controllers/sell')
+const sell = require('./controllers/sell')
 const app = express();
+app.use(express.urlencoded({ extended: true }));
 
 // const whitelist = ['http://localhost:5173',]; // Replace with your frontend IP and port
 // const corsOptions = {
@@ -21,6 +23,8 @@ const app = express();
 //     }
 //   }
 // };
+// app.use(bodyParser.json({ limit: "200mb" }));
+// app.use(bodyParser.urlencoded({ limit: "200mb", extended: true }));
 app.use(cors());
 app.use((req, res, next) => {
   const originUrl = req.get('Origin') || req.get('Referer');  // If 'Origin' is not available, fallback to 'Referer'
@@ -35,16 +39,15 @@ app.use(express.urlencoded({ extended: true })); // Allows parsing form data
 //connections
 connect(); //mongo 
 
-console.log("reached")
 // routes
 app.use('/signup', signup);
 app.use('/login', login);
 app.use('/adminCategories',adminCategories)
-app.use('/productupload',productupload)
+app.use('/productupload',sell)
 
-const PORT = process.env.PORT || 4000;  
+const PORT = process.env.PORT || 5000;  
 
 const server = app.listen(PORT, () => {
   console.log(`server listening on Port ${PORT}`);
 });
-server.timeout = 600000;
+

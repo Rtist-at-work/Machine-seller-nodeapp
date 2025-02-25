@@ -40,8 +40,6 @@ const sendEmailOTP = async (email, otp) => {
   }
 };
 
-
-
 // Cache Helper Functions
 const cacheStore = async (username, recipient, mailOrphone, otp) => {
   const response = await sendEmailOTP(mailOrphone, otp);
@@ -154,7 +152,6 @@ router.post("/resendotp", mobileOrEmailCheck, getCache, async (req, res) => {
     console.log(mailOrphone);
 
     if (response.success) {
-      console.log("ok");
       return res.status(200).json({
         message: response.message,
         [req.recipient]: mailOrphone,
@@ -174,7 +171,6 @@ router.post("/resendotp", mobileOrEmailCheck, getCache, async (req, res) => {
 });
 
 router.post("/register", async (req, res) => {
-  console.log("final step");
   try {
     const { password, confirmpass, mailOrphone } = req.body;
     console.log(password, confirmpass, mailOrphone);

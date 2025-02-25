@@ -22,8 +22,12 @@ const productupload = new mongoose.Schema({
     required : true
  },
  price : {
-    type : String,
+    type : Number,
     required : true
+ },
+ negotiable :{
+   type : Boolean,
+   required : true
  },
  description : {
     type : String,

@@ -1,39 +1,26 @@
-const express = require("express");
-const mongoose = require("mongoose");
 const multer = require("multer");
 const { GridFsStorage } = require("multer-gridfs-storage");
 const crypto = require("crypto");
-const path = require("path");
+require("dotenv").config();
 
-const router = express.Router();
-
-// MongoDB Connection
-const mongoURI = "mongodb://localhost:27017/yourDatabaseName"; // Replace with your database
-const conn = mongoose.createConnection(mongoURI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-
-// Initialize GridFS
-let gfs;
-conn.once("open", () => {
-  gfs = new mongoose.mongo.GridFSBucket(conn.db, {
-    bucketName: "uploads",
-  });
-});
-
-// Configure GridFS Storage for Multer
 const storage = new GridFsStorage({
-  url: mongoURI,
+  url: process.env.Mongo_URI,
+  cache :true,
+  disableMD5:false,
+
   file: (req, file) => {
     return new Promise((resolve, reject) => {
       crypto.randomBytes(16, (err, buf) => {
-        if (err) return reject(err);
-        const filename =
-          buf.toString("hex") + path.extname(file.originalname);
+        if (err) {
+          return reject(err);
+        }
+        const filename = buf.toString("hex") + file.originalname;
+        const bucketName = file.mimetype.startsWith("image/") ? "images" : "videos"; // Separate bucket names
+
         const fileInfo = {
           filename: filename,
-          bucketName: "uploads", // Same as the bucket name
+          bucketName: bucketName, 
+        //   metadata: { uploadedBy: req.userId },
         };
         resolve(fileInfo);
       });
@@ -41,18 +28,40 @@ const storage = new GridFsStorage({
   },
 });
 
-// Multer Middleware (Stores Directly in MongoDB)
-const upload = multer({ storage }).array("images", 10); // Accept up to 10 images
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 100MB limit for files
+  },
+  fileFilter: (req, file, callback) => {
+    const imageTypes = /jpeg|jpg|png/;
+    const videoTypes = /mp4/;
+    const isImage = imageTypes.test(file.mimetype);
+    const isVideo = videoTypes.test(file.mimetype);
 
-// Middleware to Handle Upload
-const uploadImages = (req, res, next) => {
+    if (isImage || isVideo) {
+      callback(null, true);
+    } else {
+      callback(new Error("Invalid file format. Only images (jpeg, jpg, png) and videos (mp4, mov, avi) are allowed."));
+    }
+  },
+}).fields([
+  { name: "images", maxCount: 5 }, // Adjust maxCount as needed
+  { name: "videos", maxCount: 2 }, 
+]);
+
+const uploadFiles = (req, res, next) => {
   upload(req, res, (err) => {
-    if (err) return res.status(500).json({ message: "Upload failed", error: err });
-
-    // Store image IDs in req.images
-    // req.images = req.files.map((file) => file.id);
-    // next();
+    if (err) {
+      return res
+        .status(500)
+        .json({ message: "File upload failed", error: err.message });
+    }
+    req.images = req.files?.images || []; 
+    req.videos = req.files?.videos || []; 
+    console.log(req.videos)
+    next();
   });
 };
 
-module.exports = uploadImages;
+module.exports = uploadFiles;
