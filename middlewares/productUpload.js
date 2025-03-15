@@ -9,6 +9,7 @@ const storage = new GridFsStorage({
   disableMD5:false,
 
   file: (req, file) => {
+    console.log(file)
     return new Promise((resolve, reject) => {
       crypto.randomBytes(16, (err, buf) => {
         if (err) {
@@ -35,31 +36,36 @@ const upload = multer({
   },
   fileFilter: (req, file, callback) => {
     const imageTypes = /jpeg|jpg|png/;
-    const videoTypes = /mp4/;
+    const videoTypes = /mp4|quicktime/;
     const isImage = imageTypes.test(file.mimetype);
     const isVideo = videoTypes.test(file.mimetype);
+    console.log(isImage)
+    console.log(isVideo)
 
     if (isImage || isVideo) {
       callback(null, true);
     } else {
-      callback(new Error("Invalid file format. Only images (jpeg, jpg, png) and videos (mp4, mov, avi) are allowed."));
+      callback(new Error("Invalid file format. Only images (jpeg, jpg, png) and videos (mp4) are allowed."));
     }
   },
 }).fields([
-  { name: "images", maxCount: 5 }, // Adjust maxCount as needed
-  { name: "videos", maxCount: 2 }, 
+  { name: "images", maxCount: 10 }, // Adjust maxCount as needed
+  { name: "videos", maxCount: 10 }, 
 ]);
 
 const uploadFiles = (req, res, next) => {
+  //multer call
   upload(req, res, (err) => {
     if (err) {
+      console.log(err)
       return res
         .status(500)
         .json({ message: "File upload failed", error: err.message });
     }
+
     req.images = req.files?.images || []; 
     req.videos = req.files?.videos || []; 
-    console.log(req.videos)
+
     next();
   });
 };

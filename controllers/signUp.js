@@ -3,7 +3,6 @@ const nodemailer = require("nodemailer");
 const NodeCache = require("node-cache");
 const user = require("../models/userSIgnUp");
 const mobileOrEmailCheck = require('../middlewares/mobileOrEmailCheck')
-const gg = require('../models/categoryCreation')
 const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
@@ -55,7 +54,6 @@ const cacheStore = async (username, recipient, mailOrphone, otp) => {
 const getCache = (req, res, next) => {
   const { mailOrphone } = req.body;
   const cachedData = myCache.get(mailOrphone);
-  console.log(cachedData);
 
   if (!myCache.has(mailOrphone)) {
     return res
@@ -108,6 +106,7 @@ router.post("/", mobileOrEmailCheck, async (req, res) => {
   }
 });
 router.post("/otpcheck", mobileOrEmailCheck, getCache, async (req, res) => {
+  console.log("ok")
   try {
     const { otp, mailOrphone } = req.body;
     console.log(otp, mailOrphone);
@@ -198,7 +197,6 @@ router.post("/register", async (req, res) => {
 
     // Encrypt password
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log(hashedPassword);
     // Create user object
     const newUser = new user({
       username: cachedUser.username,

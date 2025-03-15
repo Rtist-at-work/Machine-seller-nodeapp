@@ -2,32 +2,33 @@ const mongoose = require("mongoose");
 
 // Define the schema for machines (e.g., "Flatlock" and "Overlock")
 const machineSchema = new mongoose.Schema({
-  category : {
+  category: {
     type: String, // Example: "Flatlock", "Overlock"
-    index: true,  // Index for the machine type
+    index: true,  // Creates an index for faster searches
   },
   brands: [
     {
       type: String, // Example: "Siruba", "Zuki", etc.
-      index: true,  // Index for the brand names
+      index: true,  // Creates an index for brand names
     }
   ]
 });
 
 // Define the schema for categories (e.g., "Textile")
 const categorySchema = new mongoose.Schema({
-  industry : {
+  industry: {
     type: String,
     required: true,
-    unique: true, // Enforces unique names
-    trim: true,   // Removes leading/trailing whitespaces
+    unique: true, // Ensures unique industry names
+    trim: true,   // Removes leading/trailing spaces
+    lowercase: true, // Converts to lowercase (prevents case-sensitive duplicates)
   },
   data: [machineSchema] // Array of machines and their brands
 });
 
-// Ensure unique indexes are created
-categorySchema.index({ name: 1 }, { unique: true });
+// Create a unique index
+categorySchema.index({ industry: 1 }, { unique: true });
 
-const machinecategory = mongoose.model("MachineCategory", categorySchema);
-
-module.exports = machinecategory;
+// Define and export the model
+const MachineCategory = mongoose.model("MachineCategory", categorySchema);
+module.exports = MachineCategory;
