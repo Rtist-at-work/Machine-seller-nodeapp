@@ -25,6 +25,10 @@ const productupload = new mongoose.Schema({
     type : Number,
     required : true
  },
+ condition:{
+   type : String,
+   required : true
+ },
  negotiable :{
    type : String,
    required : true

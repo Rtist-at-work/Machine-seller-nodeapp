@@ -1,29 +1,61 @@
-const Category = require("../models/categoryCreation");
+const CategoryModel = require("../models/categoryCreation");
 const machines = require("../models/productUpload");
 
 const CategoryRepository = {
-  getIndustries: async (limit) => {
-    return limit === 0
-      ? await Category.distinct("industry") 
-      :await Category.aggregate([
-        { $match: { industry: { $exists: true } } },
-        { $sample: { size: limit } },                
-        { $project: { _id: 0, industry: 1 } }       
-      ]).then(docs => docs.map(doc => doc.industry));
+  getIndustries: async () => {
+    try {
+      return await CategoryModel.distinct("industry");
+    } catch (error) {
+      console.error("Error fetching industries:", error);
+      throw error; // Rethrow the error to handle it where the function is called
+    }
   },
-
+  
   getCategories : async(industry)=>{
+    console.log(industry)
     try{
       if(!industry) {
          throw new Error("Industry value is needed")
       }
-      const categories = await Category.findOne({industry :industry}, {"data":1},{"industry" : 0},{"_id":0}).then(docs => docs.data.map((doc)=>doc.category))
+      const categories = await CategoryModel.findOne({industry :industry}, {"data":1},{"industry" : 0},{"_id":0}).then(docs => docs.data.map((doc)=>doc.category))
       return categories
     }
     catch(err){
        throw new Error(err.message)
     }
   },
+
+  getMakes: async (category) => {
+    try {
+      console.log(typeof(category)); // Check if category is a string
+  
+      if (typeof category !== 'string') {
+        throw new Error('Category must be a valid string');
+      }
+  
+      const categoryPattern = new RegExp(`^${category.trim()}$`, 'i');
+  
+      const makes = await CategoryModel.findOne(
+        { 
+          "data.category": categoryPattern 
+        },
+        { 
+          "data.$": 1,  // Fetches only the matched category object
+          "_id": 0 
+        }
+      );
+  
+      if (!makes || !makes.data || makes.data.length === 0) {
+        throw new Error('No matching category found in the database');
+      }
+  
+      return makes.data[0].brands; // Return only the brands array
+    } catch (err) {
+      console.error('Error fetching makes:', err.message);
+      throw err;
+    }
+  },
+  
   
   machinesCount: async (industry) => {
     const count = await machines.countDocuments({ industry }); // Query filter corrected

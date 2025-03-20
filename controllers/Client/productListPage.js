@@ -1,0 +1,44 @@
+const machineRepository = require("../../repositories/machinerepository");
+
+const productListPage = async (req, res) => {
+  try {
+    const { searchTerm } = req.params;
+    console.log(searchTerm)
+    const searchTerms = Array.isArray(searchTerm) ? searchTerm : [searchTerm];
+
+    if (!searchTerm) {
+    }
+    const machines = await machineRepository.getSearchTermProducts({searchTerms : searchTerms, page : "productPage"});
+
+    res.status(200).json({ products: machines });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: "Server Error" });
+  }
+};
+
+const productDetails = async(req,res)=>{
+try{
+  const {id} = req.params;
+  console.log(id)
+  const product = await machineRepository.getProducts({id : id})
+  //  if (!searchTerms) {
+  //       // recommentations = await machineRepository.getSearchTermProducts({
+  //       //   searchTerms : searchTerms, page : "homePage"
+  //       // });
+  //       console.log("not reached")
+  //     } else {
+  //       console.log("reached")
+  //       recommentations = await machineRepository.getSearchTermProducts({
+  //         searchTerms: categoryProducts.shuffledIndustries, page : "homePage"
+  //       });
+  //     }
+  console.log(product)
+  res.status(200).json(product)
+}
+catch(err){
+
+}
+}
+
+module.exports = {productListPage, productDetails};
