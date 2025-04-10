@@ -16,6 +16,7 @@ const machineRepository = {
 
           const query = machines
             .find({
+              adminApproval : "approved",
               $or: [{ industry: regex }, { category: regex }, { make: regex }],
             })
             .limit(limit)
@@ -44,6 +45,7 @@ const machineRepository = {
         .find({
           industry: regexIndustry,
           category: regexCategory,
+          adminApproval : "approved"
         })
         .lean();
 
@@ -57,7 +59,7 @@ const machineRepository = {
   },
   getProducts: async ({ id }) => {
     try {
-      const results = await machines.findById(id).lean();
+      const results = await machines.findById({_id : id ,adminApproval : "approved"}).lean();
 
       if (!results) {
         throw new Error("Product not found");
@@ -85,7 +87,7 @@ const machineRepository = {
 
           const result = await machines
             .findOne(
-              { industry: regexIndustry },
+              { industry: regexIndustry, adminApproval : "approved" },
               { machineImages: 1, machineVideos: 1, industry: 1, _id: 0 }
             )
             .lean();
@@ -115,11 +117,11 @@ const machineRepository = {
           const [result, productCount, distinctMakes] = await Promise.all([
             machines
               .findOne(
-                { category: regexCategory },
+                { category: regexCategory, adminApproval : "approved" },
                 { machineImages: 1, machineVideos: 1, category: 1, _id: 0 }
               )
               .lean(),
-            machines.countDocuments({ category: regexCategory }), // Count products for the category
+            machines.countDocuments({ category: regexCategory, adminApproval : "approved" }), // Count products for the category
             machines.distinct("make", { category: regexCategory }), // Get distinct makes
           ]);
 
@@ -143,25 +145,30 @@ const machineRepository = {
     }
   },
 
-  getProductsByLocation: async (location) => {
+  getProductsByLocation: async (longitude, latitude) => {
     try {
-      const regexLocation = new RegExp(location.split("").join("\\s*"), "i");
-
-      const results = await machines.find({ location: regexLocation }).lean();
-      const productsWithFiles = await machineRepository.getProductFiles(
-        results
-      );
+      const radiusInKm = 200;
+      const radiusInRadians = radiusInKm / 6378.1; 
+      const results = await machines.find({
+        "location.coords": {
+          $geoWithin: {
+            $centerSphere: [[latitude,longitude], radiusInRadians]
+          }
+        },
+        adminApproval: "approved"
+      }).lean();
+  
+      const productsWithFiles = await machineRepository.getProductFiles(results);
       return productsWithFiles;
     } catch (error) {
       throw new Error(error.message);
     }
   },
+  
   getProductFiles: async (results) => {
-    console.log(results + "file reached");
     try {
       const imageBucket = new GridFSBucket(db, { bucketName: "images" });
       const videoBucket = new GridFSBucket(db, { bucketName: "videos" });
-
       const productsWithFiles = await Promise.all(
         results.map(async (product) => {
           // Fetch Images
@@ -209,7 +216,6 @@ const machineRepository = {
           };
         })
       );
-
       return productsWithFiles;
     } catch (err) {
       throw new Error(err.message);

@@ -1,42 +1,57 @@
-const { Server } = require( "socket.io");
-const http = require ("http");
-const express = require ("express");
+const { Server } = require("socket.io");
+const http = require("http");
+const express = require("express");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["http://192.168.1.5:5000","http://localhost:8081"],
+    origin: [
+      "http://localhost:5000",
+      "http://192.168.1.5:5000",
+    ],
     methods: ["GET", "POST"],
   },
 });
 
-// realtime message code goes here
-const getReceiverSocketId = (receiverId) => {
-  return users[receiverId];
-};
-
+// Store user socket mappings
 const users = {};
 
-// used to listen events on server side.
+// Utility to get socket IDs for sender and receiver
+const getReceiverSocketId = (receiverId, senderId) => {
+  return [users[receiverId], users[senderId]];
+};
+
+// Socket connection handler
 io.on("connection", (socket) => {
   console.log("a user connected", socket.id);
-  const userId = socket.handshake.query.userId;
-  if (userId) {
-    users[userId] = socket.id;
-    console.log("Hello ", users);
-  }
-  // used to send the events to all connected users
-  io.emit("getOnlineUsers", Object.keys(users));
 
-  // used to listen client side events emitted by server side (server & client)
+  const token = socket.handshake.query.token;
+  let decoded = null;
+
+  if (token) {
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      if (decoded) {
+        users[decoded.id] = socket.id;
+        console.log("User added:", decoded.id, socket.id);
+        io.emit("getOnlineUsers", Object.keys(users));
+      }
+    } catch (err) {
+      console.log("JWT verification failed:", err.message);
+    }
+  }
+
   socket.on("disconnect", () => {
     console.log("a user disconnected", socket.id);
-    delete users[userId];
-    io.emit("getOnlineUsers", Object.keys(users));
+    if (decoded?.id) {
+      delete users[decoded.id];
+      io.emit("getOnlineUsers", Object.keys(users));
+    }
   });
 });
 
-
-module.exports = { app, io, server,getReceiverSocketId }
+module.exports = { app, io, server, getReceiverSocketId };

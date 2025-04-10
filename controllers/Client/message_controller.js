@@ -1,12 +1,18 @@
 const { getReceiverSocketId, io } = require("../../socket/server.js");
 const Conversation = require("../../models/conversationModel.js");
-const Message = require("../../models/chatModel.js");
+const Message = require("../../models/messageModel.js");
+const User = require("../../models/userSIgnUp.js");
 
 const sendMessage = async (req, res) => {
   try {
     const { message } = req.body;
-    const { id: receiverId } = req.params;
-    const senderId = req.user._id; // current logged in user
+    console.log("new message : ", message);
+    const senderId = req.user.id;
+    const receiverId = req.params.id;
+
+    console.log(senderId);
+    console.log(receiverId);
+
     let conversation = await Conversation.findOne({
       members: { $all: [senderId, receiverId] },
     });
@@ -14,6 +20,8 @@ const sendMessage = async (req, res) => {
       conversation = await Conversation.create({
         members: [senderId, receiverId],
       });
+      await User.updateOne({ _id: senderId }, { $push: { chats: receiverId } });
+      await User.updateOne({ _id: receiverId }, { $push: { chats: senderId } });
     }
     const newMessage = new Message({
       senderId,
@@ -23,11 +31,18 @@ const sendMessage = async (req, res) => {
     if (newMessage) {
       conversation.messages.push(newMessage._id);
     }
-    // await conversation.save()
-    // await newMessage.save();
+    await conversation.save();
+    await newMessage.save();
     await Promise.all([conversation.save(), newMessage.save()]); // run parallel
-    const receiverSocketId = getReceiverSocketId(receiverId);
+    const [receiverSocketId, senderSocketId] = getReceiverSocketId(
+      receiverId,
+      senderId
+    );
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("newMessage", newMessage);
+    }
     if (receiverSocketId) {
+      newMessage.seen = true;
       io.to(receiverSocketId).emit("newMessage", newMessage);
     }
     res.status(201).json(newMessage);
@@ -39,15 +54,34 @@ const sendMessage = async (req, res) => {
 
 const getMessage = async (req, res) => {
   try {
-    const { id: chatUser } = req.params;
-    const senderId = req.user._id; // current logged in user
+    const UserId = req.user.id;
+    const { chatUser } = req.params;
+    console.log("user :", req.user, chatUser);
+
     let conversation = await Conversation.findOne({
-      members: { $all: [senderId, chatUser] },
+      members: { $all: [UserId, chatUser] },
     }).populate("messages");
+
     if (!conversation) {
       return res.status(201).json([]);
     }
+
+    // Extract messages
     const messages = conversation.messages;
+
+    // Find unread messages (where seen is false)
+    const unreadMessages = messages.filter(
+      (msg) => msg.receiverId.toString() === UserId && !msg.seen
+    );
+
+    // Update the seen status for unread messages
+    if (unreadMessages.length > 0) {
+      await Message.updateMany(
+        { _id: { $in: unreadMessages.map((msg) => msg._id) } },
+        { $set: { seen: true } }
+      );
+    }
+
     res.status(201).json(messages);
   } catch (error) {
     console.log("Error in getMessage", error);
@@ -55,4 +89,37 @@ const getMessage = async (req, res) => {
   }
 };
 
-module.exports = {sendMessage,getMessage}
+const getUsers = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const selectedUser = req.params.selectedUser;
+
+    const isUserInChats = await User.exists({
+      _id: userId,
+      chats: selectedUser, // Directly checks if selectedUser exists in chats
+    });
+
+    const users = await User.findById({ _id: userId })
+      .populate("chats", "username email mobile")
+      .select("chats -_id")
+      .lean();
+
+    let newUser;
+
+    if (selectedUser && !isUserInChats) {
+      newUser = await User.findById(selectedUser)
+        .select("username email mobile")
+        .lean();
+      users.chats.push(newUser);
+    }
+
+    // const users = await User.find().select("username email mobile");
+    Array.isArray(users.chats)
+      ? res.status(200).json(users.chats)
+      : res.status(200).json([users.chats]);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err.message });
+  }
+};
+module.exports = { sendMessage, getMessage, getUsers };

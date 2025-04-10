@@ -1,17 +1,22 @@
 const jwt = require("jsonwebtoken");
-const User = require ('../models/userSIgnUp');
-
+const User = require("../models/userSIgnUp");
 const secureRoute = async (req, res, next) => {
+
   try {
-    const token = req.cookies.jwt;
+    const token = req.headers.authorization;
+    console.log(token)
     if (!token) {
       return res.status(401).json({ error: "No token, authorization denied" });
     }
-    const decoded = jwt.verify(token, process.env.JWT_TOKEN);
+
+    const retrivedToken = token.split(" ")[1]; // Extract the token
+    console.log(retrivedToken)
+    const decoded = jwt.verify(retrivedToken, process.env.JWT_SECRET);
+    console.log(decoded)
     if (!decoded) {
       return res.status(401).json({ error: "Invalid Token" });
     }
-    const user = await User.findById(decoded.userId).select("-password"); // current loggedin user
+    const user = await User.findById(decoded.id).select("-password"); // current loggedin user
     if (!user) {
       return res.status(401).json({ error: "No user found" });
     }
@@ -19,7 +24,7 @@ const secureRoute = async (req, res, next) => {
     next();
   } catch (error) {
     console.log("Error in secureRoute: ", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: error });
   }
 };
 module.exports = secureRoute;

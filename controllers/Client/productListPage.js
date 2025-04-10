@@ -3,7 +3,7 @@ const machineRepository = require("../../repositories/machinerepository");
 const productListPage = async (req, res) => {
   try {
     const { searchTerm } = req.params;
-    console.log(searchTerm)
+    
     const searchTerms = Array.isArray(searchTerm) ? searchTerm : [searchTerm];
 
     if (!searchTerm) {

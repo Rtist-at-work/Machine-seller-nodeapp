@@ -39,8 +39,6 @@ const upload = multer({
     const videoTypes = /mp4|quicktime/;
     const isImage = imageTypes.test(file.mimetype);
     const isVideo = videoTypes.test(file.mimetype);
-    console.log(isImage)
-    console.log(isVideo)
 
     if (isImage || isVideo) {
       callback(null, true);

@@ -1,6 +1,6 @@
 const mongoose = require ("mongoose");
 const User = require( "./userSIgnUp.js");
-const Message = require ("./chatModel.js");
+const Message = require ("./messageModel.js");
 const conversationSchema = new mongoose.Schema(
   {
     members: [

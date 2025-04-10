@@ -1,10 +1,18 @@
 const CategoryModel = require("../models/categoryCreation");
 const machines = require("../models/productUpload");
+const mongoose = require("mongoose");
+const { ObjectId } = require("mongodb");
 
 const CategoryRepository = {
   getIndustries: async () => {
     try {
-      return await CategoryModel.distinct("industry");
+      const db = mongoose.connection.db;
+      const states = await db.collection("states").find({
+        _id: { $in: [new ObjectId("67ece8bf67eee96c1d1c9a68"), new ObjectId("67ece90167eee96c1d1c9a6a")] }
+      }).toArray();
+      
+      const industries = await CategoryModel.distinct("industry");
+      return({states : states, industries : industries})
     } catch (error) {
       console.error("Error fetching industries:", error);
       throw error; // Rethrow the error to handle it where the function is called
@@ -12,7 +20,6 @@ const CategoryRepository = {
   },
   
   getCategories : async(industry)=>{
-    console.log(industry)
     try{
       if(!industry) {
          throw new Error("Industry value is needed")
@@ -26,9 +33,7 @@ const CategoryRepository = {
   },
 
   getMakes: async (category) => {
-    try {
-      console.log(typeof(category)); // Check if category is a string
-  
+    try {  
       if (typeof category !== 'string') {
         throw new Error('Category must be a valid string');
       }

@@ -189,6 +189,7 @@ router.post("/register", async (req, res) => {
 
     // Check if cache exists for the provided email or phone
     const cachedUser = myCache.get(mailOrphone);
+    console.log(cachedUser)
     if (!cachedUser) {
       return res.status(404).json({
         message: "No cached data found for the provided email/phone.",
@@ -198,11 +199,12 @@ router.post("/register", async (req, res) => {
     // Encrypt password
     const hashedPassword = await bcrypt.hash(password, 10);
     // Create user object
+    console.log(cachedUser.Email,cachedUser.Mobile)
     const newUser = new user({
       username: cachedUser.username,
-      Password: hashedPassword,
-      Email: cachedUser.Email || null, // Set Email or Mobile based on cache
-      Mobile: cachedUser.Mobile || null,
+      password: hashedPassword,
+      email: cachedUser.email || null, // Set Email or Mobile based on cache
+      mobile: cachedUser.mobile || null,
     });
 
     myCache.del(`${cachedUser.Email}`);

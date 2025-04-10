@@ -12,7 +12,7 @@ const mobileOrEmailCheck = (req, res, next) => {
       .json({ message: "Enter a valid email or mobile number" });
   }
 
-  req.recipient = emailRegex.test(mailOrphone) ? "Email" : "Mobile";
+  req.recipient = emailRegex.test(mailOrphone) ? "email" : "mobile";
   next();
 };
 

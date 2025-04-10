@@ -8,7 +8,7 @@ const CategoryService = {
     const categories = await CategoryRepository.getIndustries(limit);
     return categories;
   },
-  getCategories: async (industry,page) => {
+  getCategories: async (industry, page) => {
     try {
       if (!industry) {
         throw new Error("Industry value is needed");
@@ -16,9 +16,8 @@ const CategoryService = {
       const categories = await CategoryRepository.getCategories(industry);
       if (page === "sell") {
         return categories;
-      } 
-      else {
-        console.log(page, industry)
+      } else {
+        console.log(page, industry);
         const categoryProducts = await machineRepository.getCategories({
           categories,
         });
@@ -28,7 +27,6 @@ const CategoryService = {
       throw new Error(err.message);
     }
   },
-  
   machinesCount: async ({ industries }) => {
     const totalCount = await Promise.all(
       industries.map(async (cat) => {

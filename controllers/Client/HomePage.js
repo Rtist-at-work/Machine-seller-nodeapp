@@ -12,11 +12,14 @@ const router = express.Router();
 //get home page elements
 router.get("/", async (req, res) => {
   try {
-    const { searchTerms } = req.query;
+    const { searchTerms } = req.params;
+    const {latitude,longitude } = req.query;
+    console.log(latitude,longitude )
 
     let recommentations;
     let machinesCount;
 
+    const locationProducts = await machineRepository.getProductsByLocation(parseInt(longitude), parseInt(latitude));
     const categoryProducts = await machineRepository.getIndustries();
 
     if (categoryProducts.length === 0) {
@@ -28,13 +31,19 @@ router.get("/", async (req, res) => {
     }
     if (searchTerms) {
       recommentations = await machineRepository.getSearchTermProducts({
-        searchTerms : searchTerms, page : "homePage"
+        searchTerms: searchTerms,
+        page: "homePage",
       });
     } else {
       recommentations = await machineRepository.getSearchTermProducts({
-        searchTerms: categoryProducts.shuffledIndustries, page : "homePage"
+        searchTerms: categoryProducts.shuffledIndustries,
+        page: "homePage",
       });
     }
+    // if(location){
+    //   const nearbyProducts = machineRepository.getProductsByLocation()
+    // }
+
     const updatedCategoryProducts = categoryProducts.productsWithFiles.map(
       (cp) => {
         for (let i = 0; i < machinesCount.length; i++) {
@@ -54,6 +63,7 @@ router.get("/", async (req, res) => {
     return res.status(200).json({
       category: updatedCategoryProducts,
       recommentedProducts: recommentations,
+      locationProducts : locationProducts
     });
   } catch (err) {
     console.error(err);
@@ -96,13 +106,13 @@ router.get("/search/:searchBar", async (req, res) => {
       ["industry", "data.category", "data.brands"].map(async (field) => {
         const query = {};
         if (field === "industry") {
-          query[field] = { $regex: `^${searchBar}`, $options: "i" };
+          query[field] = { $regex: searchBar, $options: "i" }; // Removed "^"
         } else if (field === "data.category") {
-          query["data.category"] = { $regex: `^${searchBar}`, $options: "i" };
+          query["data.category"] = { $regex: searchBar, $options: "i" };
         } else if (field === "data.brands") {
-          query["data.brands"] = { $regex: `^${searchBar}`, $options: "i" };
+          query["data.brands"] = { $regex: searchBar, $options: "i" };
         }
-
+        
         const projection = { [field]: 1, _id: 0 };
         const response = await categoryModel.find(query, projection).lean();
 
@@ -129,6 +139,7 @@ router.get("/search/:searchBar", async (req, res) => {
         return updated;
       })
     );
+    console.log(result)
 
     const structuredResult = result.flat();
     return res.json({ structuredResult });

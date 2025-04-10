@@ -9,27 +9,28 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";
 
 router.post("/", mobileOrEmailCheck, async (req, res) => {
+  console.log("ok")
   try {
     const { mailOrphone, password } = req.body;
+    console.log(req.recipient);
 
     // Search for user by email/mobile
-    const user = await usermodel.collection.findOne({ [req.recipient]: mailOrphone });
+    const user = await usermodel.collection.findOne({
+      [req.recipient]: mailOrphone,
+    });
 
     // Check if user exists and password matches
     if (user) {
-      const isMatch = await bcrypt.compare(password, user.Password);
+      const isMatch = await bcrypt.compare(password, user.password);
       if (isMatch) {
         // Generate JWT Token
         const token = jwt.sign(
           { id: user._id, email: user.email || user.phone },
-          JWT_SECRET,
-          { expiresIn: "1h" }  // Token expires in 1 hour
+          JWT_SECRET
         );
-
-        console.log("Logged In Successfully");
         res.status(200).json({
           message: "Logged In Successfully",
-          token,  // Return the token
+          token, // Return the token
         });
       } else {
         console.log("Invalid Password");

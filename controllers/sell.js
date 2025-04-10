@@ -5,12 +5,9 @@ const uploadModel = require("../models/productUpload");
 
 router.post("/", uploadImages, async (req, res) => {
   try {
-    if ((!req.files.images && !req.files.videos)) {
+    if (!req.files || (!req.files.images && !req.files.videos)) {
       return res.status(300).json({ message: "No images or videos uploaded" });
     }
-
-    console.log( req.files.videos)
-    console.log( req.files.images)
 
     const videos = req.files.videos
       ? req.files.videos.map((video) => video.id)
@@ -18,37 +15,52 @@ router.post("/", uploadImages, async (req, res) => {
     const images = req.files.images
       ? req.files.images.map((image) => image.id)
       : [];
-      
+    console.log(req.body.location)
     if (
       !req.body.industry ||
       !req.body.category ||
       !req.body.make ||
       !req.body.price ||
       !req.body.description ||
-      !req.body.negotiable||
-      !req.body.condition
+      !req.body.priceType ||
+      !req.body.condition ||
+      !req.body.yearOfMake ||
+      !req.body.mobile ||
+      !req.body.location
     ) {
       return res.status(400).json({ message: "Missing required fields" });
     }
- 
+    const location = JSON.parse(req.body.location)   
+
     const newMachine = {
+      userId: req.user.id,
       machineImages: images,
       machineVideos: videos,
-      industry: req.body.industry.trim(),
-      category: req.body.category.trim(),
-      make: req.body.make.trim(),
+      industry: req.body.industry?.trim(),
+      category: req.body.category?.trim(),
+      make: req.body.make?.trim(),
       price: Number(req.body.price),
-      condition:req.body.condition,
-      description: req.body.description.trim(),
-      negotiable: req.body.negotiable,
+      adminApproval: "pending",
+      contact: req.body.mobile?.trim(),
+      condition: req.body.condition?.trim(),
+      yearOfMake: Number(req.body.yearOfMake),
+      description: req.body.description?.trim(),
+      priceType: req.body.priceType?.trim(),
+      // location:typeof req.body.location === "string" ? JSON.parse(req.body.location) : req.body.location,
+      geoCoords: {  // ✅ Corrected format
+        type: "Point",
+        coordinates: [Number(location.coords.longitude), Number(location.coords.latitude)]
+      },
+      country : location.country ,
+      region : location.region ,
+      district :  location.district
     };
 
-    const result = await uploadModel.collection.insertOne(newMachine);
-    
+    const result = await uploadModel.create(newMachine);
+
     if (result) {
       return res.status(201).json({
         message: "Machine details uploaded successfully",
-        //   data: result.ops[0]  // MongoDB returns inserted data in `ops`
       });
     }
   } catch (err) {
