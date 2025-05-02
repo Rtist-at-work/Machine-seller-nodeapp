@@ -2,7 +2,7 @@ const express = require("express");
 const nodemailer = require("nodemailer");
 const NodeCache = require("node-cache");
 const user = require("../models/userSIgnUp");
-const mobileOrEmailCheck = require('../middlewares/mobileOrEmailCheck')
+const mobileOrEmailCheck = require("../middlewares/mobileOrEmailCheck");
 const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
@@ -40,12 +40,21 @@ const sendEmailOTP = async (email, otp) => {
 };
 
 // Cache Helper Functions
-const cacheStore = async (username, recipient, mailOrphone, otp) => {
+const cacheStore = async (
+  username,
+  recipient,
+  mailOrphone,
+  role,
+  mechanicDetails,
+  otp
+) => {
   const response = await sendEmailOTP(mailOrphone, otp);
   const userOTP = {
     username,
     [recipient]: mailOrphone,
     OTP: otp,
+    role: role,
+    mechanicDetails: mechanicDetails,
   };
   myCache.set(mailOrphone, userOTP, 300);
   return response;
@@ -70,7 +79,8 @@ const getCache = (req, res, next) => {
 
 // Routes
 router.post("/", mobileOrEmailCheck, async (req, res) => {
-  const { mailOrphone, username } = req.body;
+  const { mailOrphone, username, role, mechanicDetails } = req.body;
+  console.log(req.body);
 
   const existingUser = await user.findOne({ [req.recipient]: mailOrphone });
   if (existingUser) {
@@ -85,6 +95,8 @@ router.post("/", mobileOrEmailCheck, async (req, res) => {
       username,
       req.recipient,
       mailOrphone,
+      role,
+      mechanicDetails,
       otp
     );
 
@@ -106,7 +118,6 @@ router.post("/", mobileOrEmailCheck, async (req, res) => {
   }
 });
 router.post("/otpcheck", mobileOrEmailCheck, getCache, async (req, res) => {
-  console.log("ok")
   try {
     const { otp, mailOrphone } = req.body;
     console.log(otp, mailOrphone);
@@ -148,7 +159,6 @@ router.post("/resendotp", mobileOrEmailCheck, getCache, async (req, res) => {
       mailOrphone,
       newOtp
     );
-    console.log(mailOrphone);
 
     if (response.success) {
       return res.status(200).json({
@@ -172,7 +182,6 @@ router.post("/resendotp", mobileOrEmailCheck, getCache, async (req, res) => {
 router.post("/register", async (req, res) => {
   try {
     const { password, confirmpass, mailOrphone } = req.body;
-    console.log(password, confirmpass, mailOrphone);
     // Validate input
     if (!password || !confirmpass || !mailOrphone) {
       return res.status(400).json({
@@ -189,7 +198,6 @@ router.post("/register", async (req, res) => {
 
     // Check if cache exists for the provided email or phone
     const cachedUser = myCache.get(mailOrphone);
-    console.log(cachedUser)
     if (!cachedUser) {
       return res.status(404).json({
         message: "No cached data found for the provided email/phone.",
@@ -199,13 +207,39 @@ router.post("/register", async (req, res) => {
     // Encrypt password
     const hashedPassword = await bcrypt.hash(password, 10);
     // Create user object
-    console.log(cachedUser.Email,cachedUser.Mobile)
-    const newUser = new user({
+    const newUserData = {
       username: cachedUser.username,
+      role: cachedUser.role,
       password: hashedPassword,
-      email: cachedUser.email || null, // Set Email or Mobile based on cache
+      email: cachedUser.email || null,
       mobile: cachedUser.mobile || null,
-    });
+    };
+
+    // Check if the role is "mechanic" and add additional fields
+    if (cachedUser.role === "mechanic") {
+      console.log("mobile :", typeof(cachedUser.mechanicDetails.mobile))
+      const location = JSON.parse(cachedUser.mechanicDetails.location)  
+      newUserData.organization =
+        cachedUser.mechanicDetails.organization || null;
+      newUserData.services = cachedUser.mechanicDetails.services || null;
+      newUserData.industry = cachedUser.mechanicDetails.industry || null;
+      // newUserData.category = cachedUser.mechanicDetails.category || null;
+      newUserData.subcategory = cachedUser.mechanicDetails.subcategory || null;
+      newUserData.contact = cachedUser.mechanicDetails.contact?.trim();
+      newUserData.geoCoords = {
+        type: "Point",
+        coordinates: [
+          Number(location.coords.longitude),
+          Number(location.coords.latitude),
+        ],
+      };
+      newUserData.country = location.country;
+      newUserData.region = location.region;
+      newUserData.district = location.district;
+    }
+
+    // Create a new user object with the updated data
+    const newUser = new user(newUserData);
 
     myCache.del(`${cachedUser.Email}`);
 

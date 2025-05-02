@@ -25,6 +25,9 @@ const profilePage = require('./routes/profileRoutes.js')
 const secureRoute = require('./middlewares/secureRoute.js')
 const wishlist = require('./routes/wishList.js')
 const video = require('./routes/video.js')
+const mechanicRoutes = require('./routes/mechanicRoutes')
+const search  = require('./controllers/Client/SearchController.js')
+
 
 // const { getMessage, sendMessage } = require( "./controllers/Client/message_controller.js");
 // const secureRoute = require("./middlewares/secureRoute.js");
@@ -82,6 +85,8 @@ app.use("/profile",profilePage)
 app.use("/adminApproval",AdminProduct)
 app.use("/wishlist",wishlist)
 app.use("/video",video)
+app.use("/mechanicList",mechanicRoutes)
+app.use("/searchResult",search)
 
 
 
@@ -114,7 +119,7 @@ app.use("/video",video)
 
 
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`server listening on Port ${PORT}`);

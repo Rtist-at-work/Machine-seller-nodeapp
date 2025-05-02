@@ -15,10 +15,11 @@ router.post("/", uploadImages, async (req, res) => {
     const images = req.files.images
       ? req.files.images.map((image) => image.id)
       : [];
-    console.log(req.body.location)
+   
     if (
       !req.body.industry ||
       !req.body.category ||
+      !req.body.subcategory ||
       !req.body.make ||
       !req.body.price ||
       !req.body.description ||
@@ -38,6 +39,7 @@ router.post("/", uploadImages, async (req, res) => {
       machineVideos: videos,
       industry: req.body.industry?.trim(),
       category: req.body.category?.trim(),
+      subcategory: req.body.subcategory?.trim(),
       make: req.body.make?.trim(),
       price: Number(req.body.price),
       adminApproval: "pending",

@@ -48,9 +48,11 @@ const profileRepository = {
     }
   },
   updateProfileImage: async (userId, images) => {
+
+    console.log("images :",userId)
     try {
       const userProfile = await User.findByIdAndUpdate(
-        userId,
+        {_id : userId},
         {
           profileImage: images,
         },

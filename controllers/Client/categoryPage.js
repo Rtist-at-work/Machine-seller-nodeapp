@@ -12,6 +12,16 @@ const categoryPage = async (req, res) => {
     console.log(err);
   }
 };
+const subcategoryPage = async (req, res) => {
+  try {
+    const { category, page } = req.params;
+
+    const categories = await categoryService.getSubCategories(category, page);
+    res.status(200).json(categories);
+  } catch (err) {
+    console.log(err);
+  }
+};
 
 const getIndustries = async (req, res) => {
   try {
@@ -24,13 +34,12 @@ const getIndustries = async (req, res) => {
 
 const getMakes = async (req, res) => {
   try {
-    const { category } = req.params;
-    const makes = await CategoryRepository.getMakes(category);
-    console.log(makes);
+    const { subcategory, page } = req.params;
+    const makes = await CategoryRepository.getMakes(subcategory, page);
     res.status(200).json(makes);
   } catch (err) {
     console.log(err);
   }
 };
 
-module.exports = { categoryPage, getIndustries, getMakes };
+module.exports = { categoryPage, getIndustries, subcategoryPage, getMakes };

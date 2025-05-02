@@ -4,15 +4,15 @@ const secureRoute = async (req, res, next) => {
 
   try {
     const token = req.headers.authorization;
-    console.log(token)
+    console.log("!token :" , !token)
+
     if (!token) {
       return res.status(401).json({ error: "No token, authorization denied" });
     }
 
     const retrivedToken = token.split(" ")[1]; // Extract the token
-    console.log(retrivedToken)
     const decoded = jwt.verify(retrivedToken, process.env.JWT_SECRET);
-    console.log(decoded)
+    console.log("decoded :", decoded)
     if (!decoded) {
       return res.status(401).json({ error: "Invalid Token" });
     }

@@ -1,10 +1,6 @@
 const mongoose = require("mongoose");
 const User = require('./userSIgnUp')
 
-
-const LocationSchema = new mongoose.Schema({
-    
-  });
 const productupload = new mongoose.Schema({
   userId : {
     type: mongoose.Schema.Types.ObjectId,
@@ -24,6 +20,10 @@ const productupload = new mongoose.Schema({
     required: true,
   },
   category: {
+    type: String,
+    required: true,
+  },
+  subcategory: {
     type: String,
     required: true,
   },

@@ -9,7 +9,7 @@ const storage = new GridFsStorage({
   disableMD5:false,
 
   file: (req, file) => {
-    console.log(file)
+    console.log("file :", file)
     return new Promise((resolve, reject) => {
       crypto.randomBytes(16, (err, buf) => {
         if (err) {
@@ -35,6 +35,7 @@ const upload = multer({
     fileSize: 100 * 1024 * 1024, // 100MB limit for files
   },
   fileFilter: (req, file, callback) => {
+    console.log("file :", file)
     const imageTypes = /jpeg|jpg|png/;
     const videoTypes = /mp4|quicktime/;
     const isImage = imageTypes.test(file.mimetype);
@@ -52,6 +53,7 @@ const upload = multer({
 ]);
 
 const uploadFiles = (req, res, next) => {
+  console.log("reached fileupload")
   //multer call
   upload(req, res, (err) => {
     if (err) {

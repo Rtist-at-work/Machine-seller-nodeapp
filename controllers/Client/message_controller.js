@@ -6,12 +6,8 @@ const User = require("../../models/userSIgnUp.js");
 const sendMessage = async (req, res) => {
   try {
     const { message } = req.body;
-    console.log("new message : ", message);
     const senderId = req.user.id;
     const receiverId = req.params.id;
-
-    console.log(senderId);
-    console.log(receiverId);
 
     let conversation = await Conversation.findOne({
       members: { $all: [senderId, receiverId] },

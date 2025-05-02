@@ -17,11 +17,28 @@ const CategoryService = {
       if (page === "sell") {
         return categories;
       } else {
-        console.log(page, industry);
         const categoryProducts = await machineRepository.getCategories({
           categories,
         });
         return categoryProducts;
+      }
+    } catch (err) {
+      throw new Error(err.message);
+    }
+  },
+  getSubCategories: async (category, page) => {
+    try {
+      if (!category) {
+        throw new Error("category value is needed");
+      }
+      const subcategories = await CategoryRepository.getSubCategories(category);
+      if (page === "sell") {
+        return subcategories;
+      } else {
+        const subcategoryProducts = await machineRepository.getSubCategories({
+          subcategories,
+        });
+        return subcategoryProducts;
       }
     } catch (err) {
       throw new Error(err.message);

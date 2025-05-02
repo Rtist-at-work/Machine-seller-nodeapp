@@ -9,7 +9,6 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";
 
 router.post("/", mobileOrEmailCheck, async (req, res) => {
-  console.log("ok")
   try {
     const { mailOrphone, password } = req.body;
     console.log(req.recipient);
@@ -31,6 +30,7 @@ router.post("/", mobileOrEmailCheck, async (req, res) => {
         res.status(200).json({
           message: "Logged In Successfully",
           token, // Return the token
+          role:user.role
         });
       } else {
         console.log("Invalid Password");

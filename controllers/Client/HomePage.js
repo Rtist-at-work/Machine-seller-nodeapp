@@ -14,7 +14,6 @@ router.get("/", async (req, res) => {
   try {
     const { searchTerms } = req.params;
     const {latitude,longitude } = req.query;
-    console.log(latitude,longitude )
 
     let recommentations;
     let machinesCount;
