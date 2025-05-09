@@ -12,7 +12,7 @@ const router = express.Router();
 console.log("kcknvjknxjn");
 router.get("/", secureRoute, profilePage);
 router.post("/update", secureRoute, updateProfile);
-router.post("/updateProfileImage/:imagetype", secureRoute, upload, updateProfileImage);
+router.post("/updateProfileImage", secureRoute, upload, updateProfileImage);
 // router.post("/updateBannerImage", secureRoute, upload, updateBannerImage);
 router.post("/passwordReset", secureRoute,  passwordReset);
 
