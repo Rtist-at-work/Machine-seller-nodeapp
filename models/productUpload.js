@@ -45,9 +45,16 @@ const productupload = new mongoose.Schema({
     required: true,
   },
   contact: {
-    type: String, // Changed to String for validation purposes
-    required: true,
-    match: [/^\d+$/, "Contact must contain only numbers"], // Allows only digits
+    countryCode: {
+      type: String,
+      required : true,      
+      match: [/^\+\d+$/, "Invalid country code format"], // e.g., +91
+    },
+    number: {
+      type: String,
+      required:true,
+      match: [/^\d{6,15}$/, "Invalid phone number"], // 6 to 15 digits
+    },
   },
   adminApproval: {
     type: String,

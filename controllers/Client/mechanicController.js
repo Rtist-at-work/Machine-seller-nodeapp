@@ -32,7 +32,7 @@ const getComments = async (req, res) => {
 };
 const getPosts = async (req, res) => {
   const userId = req.user._id.toString();
-  console.log("controller reached")
+  
   const { MechId } = req.params;
   try {
     const posts = await mechanicService.getPosts(MechId, userId);
@@ -42,6 +42,21 @@ const getPosts = async (req, res) => {
   }
 };
 
+const deletemedia = async (req, res) => {
+  try {
+    
+
+    const userId = req.user._id;
+    const {postId} = req.params;
+    const result = mechanicService.postmedia(
+      postId,
+      userId
+    );
+    res.status(200).json({result, message: "Post updated Successfully"});
+  } catch (err) {
+    console.log(err);
+  }
+};
 const postmedia = async (req, res) => {
   try {
     if (!req.files) {
@@ -56,7 +71,7 @@ const postmedia = async (req, res) => {
       bio,
       userId
     );
-    res.status(200).json(result);
+    res.status(200).json({result, message: "Post updated Successfully"});
   } catch (err) {
     console.log(err);
   }
@@ -98,7 +113,7 @@ const postReviews = async (req, res) => {
     const userId = req.user._id.toString();
     const userReview = req.body;
     const result = await mechanicService.postReviews(userReview, userId);
-    res.status(200).json({ result });
+    res.status(200).json({ result, message : "Review Added Successfully" });
   } catch (err) {
     console.log(err);
   }
@@ -113,5 +128,6 @@ module.exports = {
   getReviews,
   postComment,
   getComments,
-  editProfile
+  editProfile,
+  deletemedia
 };

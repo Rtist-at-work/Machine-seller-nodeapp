@@ -8,14 +8,13 @@ router.post("/", uploadImages, async (req, res) => {
     if (!req.files || (!req.files.images && !req.files.videos)) {
       return res.status(300).json({ message: "No images or videos uploaded" });
     }
-
     const videos = req.files.videos
       ? req.files.videos.map((video) => video.id)
       : [];
     const images = req.files.images
       ? req.files.images.map((image) => image.id)
       : [];
-   
+
     if (
       !req.body.industry ||
       !req.body.category ||
@@ -31,8 +30,9 @@ router.post("/", uploadImages, async (req, res) => {
     ) {
       return res.status(400).json({ message: "Missing required fields" });
     }
-    const location = JSON.parse(req.body.location)   
-
+    const location = JSON.parse(req.body.location);
+    const contact = JSON.parse(req.body.mobile);
+    console.log(JSON.stringify(req.body.mobile));
     const newMachine = {
       userId: req.user.id,
       machineImages: images,
@@ -43,22 +43,30 @@ router.post("/", uploadImages, async (req, res) => {
       make: req.body.make?.trim(),
       price: Number(req.body.price),
       adminApproval: "pending",
-      contact: req.body.mobile?.trim(),
+      contact: {
+        countryCode : mobile.countryCode,
+        number : mobile.number
+      },
       condition: req.body.condition?.trim(),
       yearOfMake: Number(req.body.yearOfMake),
       description: req.body.description?.trim(),
       priceType: req.body.priceType?.trim(),
       // location:typeof req.body.location === "string" ? JSON.parse(req.body.location) : req.body.location,
-      geoCoords: {  // ✅ Corrected format
+      geoCoords: {
+        // ✅ Corrected format
         type: "Point",
-        coordinates: [Number(location.coords.longitude), Number(location.coords.latitude)]
+        coordinates: [
+          Number(location.coords.longitude),
+          Number(location.coords.latitude),
+        ],
       },
-      country : location.country ,
-      region : location.region ,
-      district :  location.district
+      country: location.country,
+      region: location.region,
+      district: location.district,
     };
 
     const result = await uploadModel.create(newMachine);
+    console.log(result);
 
     if (result) {
       return res.status(201).json({

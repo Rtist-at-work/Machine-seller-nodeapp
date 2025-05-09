@@ -121,12 +121,28 @@ const mechanicRepository = {
   },
 
   getPosts: async (MechId, userId) => {
-    console.log("repo reached");
+    console.log("mechId :", !MechId);
+    let finalId;
+
+    if (MechId === "undefined") finalId = userId;
+    else finalId = MechId;
+
+    console.log("Final ID:", finalId);
+    console.log("useriD :", userId);
+
+    // Ensure finalId is valid
+    if (!finalId || typeof finalId !== "string" || finalId.length !== 24) {
+      console.log("Invalid or missing ObjectId:", finalId);
+      return []; // or throw an error if needed
+    }
 
     try {
-      const posts = await User.findById(MechId, { posts: 1 })
+      const posts = await User.findById(finalId)
+        .select("posts")
         .populate("posts")
         .lean();
+
+      if (!posts || !posts.posts) return [];
 
       const postsWithMedia = await Promise.all(
         posts.posts.map(async (post) => {
@@ -140,9 +156,75 @@ const mechanicRepository = {
           };
         })
       );
+
       return postsWithMedia;
     } catch (err) {
-      console.log(err);
+      console.log("Error fetching posts:", err);
+      return [];
+    }
+  },
+
+  deleteMedia: async (postId, userId) => {
+    try {
+      // Step 1: Find the user
+      const user = await User.findById(userId);
+      if (!user) throw new Error("User not found");
+
+      // Step 2: Find the post
+      const post = await Post.findById(postId);
+      if (!post) throw new Error("Post not found");
+
+      // Step 3: Attempt to delete media from both GridFS buckets
+      if (post.media) {
+        const db = mongoose.connection.db;
+        const mediaObjectId = new mongoose.Types.ObjectId(post.media);
+
+        const imageBucket = new GridFSBucket(db, { bucketName: "images" });
+        const videoBucket = new GridFSBucket(db, { bucketName: "videos" });
+
+        // Try deleting from images bucket
+        try {
+          await imageBucket.delete(mediaObjectId);
+          console.log("Deleted from images bucket");
+        } catch (err) {
+          if (err.code === "ENOENT" || err.message.includes("FileNotFound")) {
+            console.log(
+              "Media not found in images bucket, trying videos bucket..."
+            );
+          } else {
+            console.warn("Error deleting from images bucket:", err);
+          }
+        }
+
+        // Try deleting from videos bucket
+        try {
+          await videoBucket.delete(mediaObjectId);
+          console.log("Deleted from videos bucket");
+        } catch (err) {
+          if (err.code === "ENOENT" || err.message.includes("FileNotFound")) {
+            console.log("Media not found in videos bucket");
+          } else {
+            console.warn("Error deleting from videos bucket:", err);
+          }
+        }
+      }
+
+      // Step 4: Delete the post
+      await Post.findByIdAndDelete(postId);
+
+      // Step 5: Update the user's posts array if mechanic
+      if (user.role === "mechanic") {
+        user.posts = user.posts.filter((id) => id.toString() !== postId);
+        await user.save();
+        console.log("User updated after post deletion:", user);
+      } else {
+        console.log("User is not a mechanic, no user update needed.");
+      }
+
+      return { success: true, message: "Post and media deleted successfully" };
+    } catch (err) {
+      console.error("Error deleting post/media:", err);
+      throw err;
     }
   },
 
@@ -175,8 +257,7 @@ const mechanicRepository = {
       } else {
         console.log("User is not a mechanic, no post added to user.");
       }
-
-      return savedPost; // Return the saved post if needed
+      return user.posts; // Return the saved post if needed
     } catch (err) {
       console.error("Error creating post or updating user:", err);
       throw err; // Propagate the error so it can be caught by a higher-level handler if needed
@@ -185,27 +266,25 @@ const mechanicRepository = {
   editProfile: async (userData, userId) => {
     try {
       // Prevent changing the _id field
-      if ('_id' in userData) {
+      if ("_id" in userData) {
         delete userData._id;
       }
-  
-      const updatedProfile = await User.findByIdAndUpdate(
-        userId,
-        userData,
-        { new: true }
-      );
-  
+
+      const updatedProfile = await User.findByIdAndUpdate(userId, userData, {
+        new: true,
+      });
+
       if (!updatedProfile) {
         return { message: "User not found" };
       }
-  
+
       return { message: "Profile updated", data: updatedProfile };
     } catch (err) {
       console.error("Edit profile error:", err);
       return { message: "Server error" };
     }
   },
-  
+
   postReviews: async (userReview, userId) => {
     try {
       // Step 1: Create and save a new Review document
@@ -290,7 +369,7 @@ const mechanicRepository = {
         userId: user,
       });
       // Emit new comment with populated user data
-      io.emit("comments-updated", {
+      io.to(postId).emit("comments-updated", {
         comment: {
           _id: newComment._id,
           comment: newComment.comment,

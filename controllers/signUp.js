@@ -48,31 +48,58 @@ const cacheStore = async (
   mechanicDetails,
   otp
 ) => {
+  console.log("username :", username)
+  console.log("recipient :", recipient)
+  console.log("mailOrphone :", mailOrphone)
+  console.log("role :", role)
+  console.log("mechanicDetails :", mechanicDetails)
+  console.log("otp :", otp)
   const response = await sendEmailOTP(mailOrphone, otp);
-  const userOTP = {
+  const userData = {
     username,
     [recipient]: mailOrphone,
     OTP: otp,
     role: role,
     mechanicDetails: mechanicDetails,
   };
-  myCache.set(mailOrphone, userOTP, 300);
+  const userOtp = {
+    username,
+    OTP: otp,
+  };
+  console.log("userotp,", userOtp);
+  myCache.set(mailOrphone + "otp", userOtp, 30);
+  myCache.set(mailOrphone, userData, 300);
   return response;
+};
+
+const getCachedOtp = (req, res, next) => {
+  const { mailOrphone } = req.body;
+  const cachedData = myCache.get(mailOrphone+"otp");
+  console.log("cached :", cachedData);
+
+  if (!myCache.has(mailOrphone)) {
+    return res.status(404).json({ message: "Otp expired." });
+  } else if (!cachedData) {
+    return res.status(410).json({ message: "OTP has expired." });
+  }
+  next();
 };
 
 const getCache = (req, res, next) => {
   const { mailOrphone } = req.body;
-  const cachedData = myCache.get(mailOrphone);
+  // const cachedData = myCache.get(mailOrphone+"otp");
+  const userData = myCache.get(mailOrphone);
+  // console.log("cached :", cachedData);
+  console.log("userData :", userData);
 
   if (!myCache.has(mailOrphone)) {
-    return res
-      .status(404)
-      .json({ message: "Email or phone number not found in cache." });
-  } else if (!cachedData) {
-    return res.status(410).json({ message: "OTP has expired." });
+    return res.status(404).json({ message: "Session has expired." });
+  } 
+  else if (!userData) {
+    return res.status(410).json({ message: "Session has expired." });
   }
 
-  req.user = cachedData;
+  req.user = userData;
   console.log(req.user);
   next();
 };
@@ -91,6 +118,7 @@ router.post("/", mobileOrEmailCheck, async (req, res) => {
 
   try {
     const otp = generateOTP();
+    console.log("otp", otp);
     const response = await cacheStore(
       username,
       req.recipient,
@@ -117,37 +145,48 @@ router.post("/", mobileOrEmailCheck, async (req, res) => {
       .json({ message: "Error in sending OTP", error: err.message });
   }
 });
-router.post("/otpcheck", mobileOrEmailCheck, getCache, async (req, res) => {
-  try {
-    const { otp, mailOrphone } = req.body;
-    console.log(otp, mailOrphone);
-    // Validate input
-    if (!otp || !mailOrphone) {
-      console.error("Missing OTP or email/mobile.");
-      return res
-        .status(400)
-        .json({ message: "OTP and email/mobile are required." });
-    }
+router.post(
+  "/otpcheck",
+  mobileOrEmailCheck,
+  getCachedOtp,
+  getCache,
+  async (req, res) => {
+    try {
+      const { otp, mailOrphone } = req.body;
+      console.log("otp", otp);
+      console.log(otp, mailOrphone);
+      // Validate input
+      if (!otp || !mailOrphone) {
+        console.error("Missing OTP or email/mobile.");
+        return res
+          .status(400)
+          .json({ message: "OTP and email/mobile are required." });
+      }
 
-    // Check OTP and mailOrphone against user data
-    if (
-      req.user &&
-      mailOrphone === req.user[req.recipient] &&
-      otp === req.user.OTP
-    ) {
-      console.log("OTP verification successful.");
-      return res.status(200).json({ message: "OTP verification successful." });
-    } else {
-      return res.status(401).json({ message: "OYP verfication failed" });
+      // Check OTP and mailOrphone against user data
+      if (
+        req.user &&
+        mailOrphone === req.user[req.recipient] &&
+        otp === req.user.OTP
+      ) {
+        console.log("OTP verification successful.");
+        return res
+          .status(200)
+          .json({ message: "OTP verification successful." });
+      } else {
+        return res
+          .status(401)
+          .json({ message: "Incorrect Otp. OTP verfication failed !" });
+      }
+    } catch (error) {
+      // Handle unexpected errors
+      console.error("Error during OTP verification:", error);
+      return res
+        .status(500)
+        .json({ message: "Internal server error. Please try again later." });
     }
-  } catch (error) {
-    // Handle unexpected errors
-    console.error("Error during OTP verification:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal server error. Please try again later." });
   }
-});
+);
 
 router.post("/resendotp", mobileOrEmailCheck, getCache, async (req, res) => {
   try {
@@ -157,6 +196,8 @@ router.post("/resendotp", mobileOrEmailCheck, getCache, async (req, res) => {
       req.user.username,
       req.recipient,
       mailOrphone,
+      req.user.role,
+      req.user.mechanicDetails,
       newOtp
     );
 
@@ -182,6 +223,7 @@ router.post("/resendotp", mobileOrEmailCheck, getCache, async (req, res) => {
 router.post("/register", async (req, res) => {
   try {
     const { password, confirmpass, mailOrphone } = req.body;
+    console.log(mailOrphone)
     // Validate input
     if (!password || !confirmpass || !mailOrphone) {
       return res.status(400).json({
@@ -200,7 +242,7 @@ router.post("/register", async (req, res) => {
     const cachedUser = myCache.get(mailOrphone);
     if (!cachedUser) {
       return res.status(404).json({
-        message: "No cached data found for the provided email/phone.",
+        message: "Something went wrong please try again later",
       });
     }
 
@@ -217,15 +259,16 @@ router.post("/register", async (req, res) => {
 
     // Check if the role is "mechanic" and add additional fields
     if (cachedUser.role === "mechanic") {
-      console.log("mobile :", typeof(cachedUser.mechanicDetails.mobile))
-      const location = JSON.parse(cachedUser.mechanicDetails.location)  
+      console.log("mobile :", typeof cachedUser.mechanicDetails.mobile);
+      const location = JSON.parse(cachedUser.mechanicDetails.location);
       newUserData.organization =
         cachedUser.mechanicDetails.organization || null;
       newUserData.services = cachedUser.mechanicDetails.services || null;
       newUserData.industry = cachedUser.mechanicDetails.industry || null;
       // newUserData.category = cachedUser.mechanicDetails.category || null;
       newUserData.subcategory = cachedUser.mechanicDetails.subcategory || null;
-      newUserData.contact = cachedUser.mechanicDetails.contact?.trim();
+      newUserData.contact = cachedUser.mechanicDetails.contact;
+      newUserData.bio = cachedUser.mechanicDetails.bio;
       newUserData.geoCoords = {
         type: "Point",
         coordinates: [

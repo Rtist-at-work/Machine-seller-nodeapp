@@ -21,23 +21,30 @@ const mechanicService = {
           }
           result.location[mech.region].add(mech.district);
         }
-
-        // Industry: cinema => [categories]
-        if (mech.industry && mech.category) {
+      
+        // Industry: construction => [categories]
+        if (mech.industry && mech.subcategory?.length > 0) {
           if (!result.industry[mech.industry]) {
             result.industry[mech.industry] = new Set();
           }
-          result.industry[mech.industry].add(mech.category);
-        }
-
-        // Category: camera => [subcategories]
-        if (mech.category && mech.subcategory) {
-          if (!result.category[mech.category]) {
-            result.category[mech.category] = new Set();
-          }
-          result.category[mech.category].add(mech.subcategory);
+          mech.subcategory.forEach((sub) => {
+            if (sub.name) {
+              result.industry[mech.industry].add(sub.name);
+      
+              // Category: tools => [subcategories: drills, grinders]
+              if (sub.services?.length > 0) {
+                if (!result.category[sub.name]) {
+                  result.category[sub.name] = new Set();
+                }
+                sub.services.forEach((srv) => {
+                  result.category[sub.name].add(srv);
+                });
+              }
+            }
+          });
         }
       });
+      
 
       // Convert sets to arrays
       Object.keys(result.location).forEach((region) => {
@@ -99,6 +106,16 @@ const mechanicService = {
   postmedia: async (media, bio, userId) => {
     try {
       const result = mechanicRepository.postMedia(media, bio, userId);
+      return result;
+    } catch (err) {
+      return err;
+    }
+  },
+  deletemedia: async (postId,
+    userId) => {
+    try {
+      const result = mechanicRepository.deleteMedia(postId,
+        userId);
       return result;
     } catch (err) {
       return err;

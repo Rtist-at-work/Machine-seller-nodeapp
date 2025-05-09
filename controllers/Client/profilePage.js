@@ -25,6 +25,7 @@ const updateProfile = async(req,res)=>{
 const updateProfileImage = async(req,res)=>{
   try{
     const userId = req.user.id;
+    const {imagetype} = req.params;
     if ((!req.files.images)) {
       return res.status(300).json({ message: "No images or videos uploaded" });
     }
@@ -32,8 +33,8 @@ const updateProfileImage = async(req,res)=>{
     const images = req.files.images
       ? req.files.images.map((image) => image.id)
       : [];
-    const userProfileImage = await profileRepository.updateProfileImage(userId,images[0].toString());
-    res.status(200).json({message : "User Details updated Succesfully",userProfileImage});
+    const userProfileImage = await profileRepository.updateProfileImage(userId,images[0].toString(),imagetype);
+    res.status(200).json({message : "Profile picture Succesfully",userProfileImage});
   } catch (err) {
    res.status(500).json({message: err?.message || "Internal server error"})
   }
@@ -45,7 +46,7 @@ const passwordReset = async(req,res)=>{
 
     console.log(userId,password)
     const userProfile = await profileService.passwordReset(userId,password);
-    res.status(200).json({message : "User Details updated Succesfully",userProfile});
+    res.status(200).json({message : "Password updated Succesfully",userProfile});
   } catch (err) {
    res.status(500).json({message: err?.message || "Internal server error"})
   }
