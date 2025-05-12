@@ -46,9 +46,11 @@ const deletemedia = async (req, res) => {
   try {
     
 
-    const userId = req.user._id;
-    const {postId} = req.params;
-    const result = mechanicService.postmedia(
+    const userId = req.user.id;
+    const {postId} = req.body;
+    console.log(postId)
+    console.log(userId)
+    const result = mechanicService.deletemedia(
       postId,
       userId
     );
@@ -64,7 +66,7 @@ const postmedia = async (req, res) => {
     }
     const media = req.files.images || req.files.videos;
 
-    const userId = req.user._id;
+    const userId = req.user.id;
     const bio = req.body.bio;
     const result = mechanicService.postmedia(
       media[0].id.toString(),
@@ -79,7 +81,7 @@ const postmedia = async (req, res) => {
 
 const postComment = async (req, res) => {
   try {
-    const userId = req.user._id.toString();
+    const userId = req.user.id.toString();
     const { post, comment } = req.body;
     const result = await mechanicService.postComment(post, comment, userId);
     res.status(200).json(result);

@@ -18,7 +18,7 @@ const router = express.Router();
 router.get("/", getMechanics);
 router.get("/getReviews/:selectedMech", getReviews);
 router.post("/postMedia", secureRoute, mediaUpload, postmedia);
-router.post("/deleteMedia", secureRoute, deletemedia);
+router.delete("/deletePosts", secureRoute, deletemedia);
 router.post("/postLikes", secureRoute, postLikes);
 router.post("/postComment", secureRoute, postComment);
 router.get("/getComments/:postId", secureRoute, getComments);

@@ -44,7 +44,7 @@ const upload = multer({
     if (isImage || isVideo) {
       callback(null, true);
     } else {
-      callback(new Error("Invalid file format. Only images (jpeg, jpg, png) and videos (mp4) are allowed."));
+      callback(new Error("Invalid file format."));
     }
   },
 }).fields([
@@ -60,7 +60,7 @@ const uploadFiles = (req, res, next) => {
       console.log(err)
       return res
         .status(500)
-        .json({ message: "File upload failed", error: err.message });
+        .json({ message:  err.message || "File upload failed", error: err.message });
     }
 
     req.images = req.files?.images || []; 
