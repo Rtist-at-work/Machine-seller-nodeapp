@@ -60,16 +60,16 @@ const userSchema = new mongoose.Schema(
         return this.role === "mechanic";
       },
     },
-    // bio: {
-    //   type: String,
-    //   maxlength : 50,
-    //   sparse : true
-    //   // required: function () {
-    //   //   return this.role === "mechanic";
-    //   // },
-    // },
+    bio: {
+      type: String,
+      maxlength: 50,
+      sparse: true,
+    },
+    qr: {
+      type: Boolean,
+      default : false
+    },
     subcategory: {
-      
       type: [subCategorySchema],
       required: function () {
         return this.role === "mechanic";
@@ -126,10 +126,11 @@ const userSchema = new mongoose.Schema(
     district: {
       type: String,
       required: function () {
-        return this.role === "mechanic";
+        return this.role === "mechanic" && this.country === "India";
       },
       sparse: true,
     },
+
     organization: {
       type: String,
       required: function () {
@@ -154,12 +155,12 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
-    // averageRating: {
-    //   type: Number,
-    //   required: function () {
-    //     return this.role === "mechanic"; // Posts are only required for mechanics
-    //   },
-    // },
+    averageRating: {
+      type: Number,
+      // required: function () {
+      //   return this.role === "mechanic"; // Posts are only required for mechanics
+      // },
+    },
 
     searchTerms: {
       type: [String],

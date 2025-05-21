@@ -15,6 +15,18 @@ router.post("/", uploadImages, async (req, res) => {
       ? req.files.images.map((image) => image.id)
       : [];
 
+    console.log(req.body.industry);
+    console.log(req.body.category);
+    console.log(req.body.subcategory);
+    console.log(req.body.make);
+    console.log(req.body.price);
+    console.log(req.body.description);
+    console.log(req.body.condition);
+    console.log(req.body.yearOfMake);
+    console.log(req.body.countryCode);
+    console.log(req.body.number);
+    console.log(req.body.location);
+
     if (
       !req.body.industry ||
       !req.body.category ||
@@ -25,14 +37,15 @@ router.post("/", uploadImages, async (req, res) => {
       !req.body.priceType ||
       !req.body.condition ||
       !req.body.yearOfMake ||
-      !req.body.mobile ||
+      !req.body.countryCode ||
+      !req.body.number ||
       !req.body.location
     ) {
       return res.status(400).json({ message: "Missing required fields" });
     }
     const location = JSON.parse(req.body.location);
-    const contact = JSON.parse(req.body.mobile);
-    console.log(JSON.stringify(req.body.mobile));
+    // const contact = JSON.parse(req.body.mobile);
+    // console.log(JSON.stringify(req.body.mobile));
     const newMachine = {
       userId: req.user.id,
       machineImages: images,
@@ -42,10 +55,11 @@ router.post("/", uploadImages, async (req, res) => {
       subcategory: req.body.subcategory?.trim(),
       make: req.body.make?.trim(),
       price: Number(req.body.price),
+      priceType : req.body.priceType,
       adminApproval: "pending",
       contact: {
-        countryCode : mobile.countryCode,
-        number : mobile.number
+        countryCode: req.body.countryCode,
+        number: req.body.number,
       },
       condition: req.body.condition?.trim(),
       yearOfMake: Number(req.body.yearOfMake),

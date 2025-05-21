@@ -9,13 +9,14 @@ const { io } = require("../socket/server");
 const db = mongoose.connection;
 
 const mechanicRepository = {
-  getMechanics: async (page, limit) => {
+  getMechanics: async (page, limit, userId) => {
     try {
       const skip = (page - 1) * limit;
 
       const mechanics = await User.find({ role: "mechanic" })
         .skip(skip)
         .limit(limit);
+      const user = await User.findById(userId);
 
       const total = await User.countDocuments({ role: "mechanic" });
 
@@ -25,6 +26,9 @@ const mechanicRepository = {
           // Fetch the profile image for each mechanic
           const profileImage = await mechanicRepository.getProductFiles(
             mechanic.profileImage
+          );
+          const bannerImage = await mechanicRepository.getProductFiles(
+            mechanic.banner
           );
 
           // res.json({
@@ -37,6 +41,7 @@ const mechanicRepository = {
           return {
             ...mechanic.toObject(), // Use toObject to get a plain object (Mongoose doc is not a plain object)
             profileImage: profileImage,
+            banner: bannerImage,
           };
         })
       );
@@ -45,6 +50,7 @@ const mechanicRepository = {
         data: updatedMechanics,
         totalPages: Math.ceil(total / limit),
         currentPage: page,
+        qr: user.qr,
       };
     } catch (err) {
       console.error("Error fetching mechanics:", err);
@@ -326,6 +332,23 @@ const mechanicRepository = {
       } else {
         console.log("User is not a mechanic. Review not linked.");
       }
+
+      console.log(userReview.mechId, "jgdvshvihdsbvihbds");
+
+      const populatedReview = await ReviewModel.findById(
+        savedReview._id
+      ).populate("user", "username profileImage");
+
+      const updatedProfileImage = await mechanicRepository.getProductFiles(
+        populatedReview.user.profileImage
+      );
+
+      populatedReview.user.profileImage = updatedProfileImage;
+
+      io.to(userReview.mechId).emit("review-updated", {
+        mechanic: mechanic,
+        review: populatedReview,
+      });
 
       return savedReview;
     } catch (err) {

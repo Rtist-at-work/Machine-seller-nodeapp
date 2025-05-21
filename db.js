@@ -9,7 +9,7 @@ const connect = async () => {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
-        console.log("MongoDB connected successfully!");
+        console.log("MongoDB connected successfully!"); 
 
         const gfs = gridfsStream(conn.connection.db,mongoose.mongo)
         gfs.collection('uploads')

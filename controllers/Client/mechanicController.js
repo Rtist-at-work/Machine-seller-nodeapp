@@ -2,9 +2,10 @@ const mechanicService = require("../../services/mechanicService");
 
 const getMechanics = async (req, res) => {
   try {
+    const userId = req.user.id;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const mechanics = await mechanicService.getMechanics(page, limit);
+    const mechanics = await mechanicService.getMechanics(page, limit, userId);
     res.json(mechanics);
   } catch (err) {
     console.log(err);

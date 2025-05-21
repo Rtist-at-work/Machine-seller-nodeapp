@@ -15,7 +15,7 @@ const secureRoute = require("../middlewares/secureRoute");
 const mediaUpload = require("../middlewares/productUpload");
 
 const router = express.Router();
-router.get("/", getMechanics);
+router.get("/",secureRoute, getMechanics);
 router.get("/getReviews/:selectedMech", getReviews);
 router.post("/postMedia", secureRoute, mediaUpload, postmedia);
 router.delete("/deletePosts", secureRoute, deletemedia);

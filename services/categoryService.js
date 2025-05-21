@@ -13,31 +13,38 @@ const CategoryService = {
       if (!industry) {
         throw new Error("Industry value is needed");
       }
+
       const categories = await CategoryRepository.getCategories(industry);
+
       if (page === "sell") {
         return categories;
       } else {
         const categoryProducts = await machineRepository.getCategories({
-          categories,
+          categories: categories.categoryNames,
         });
-        return categoryProducts;
+        return {
+          industries: categories.industries,
+          categoryProducts,
+        };
       }
     } catch (err) {
       throw new Error(err.message);
     }
   },
+
   getSubCategories: async (category, page) => {
     try {
       if (!category) {
         throw new Error("category value is needed");
       }
       const subcategories = await CategoryRepository.getSubCategories(category);
+      console.log("sub reached :", subcategories);
       if (page === "sell") {
         return subcategories;
       } else {
-        const subcategoryProducts = await machineRepository.getSubCategories({
-          subcategories,
-        });
+        const subcategoryProducts = await machineRepository.getSubCategories(
+          subcategories
+        );
         return subcategoryProducts;
       }
     } catch (err) {

@@ -22,11 +22,13 @@ const categoryRoutes = require("./routes/categoryRoutes.js");
 const productDetailRoutes = require("./routes/productDetails.js");
 const AdminProduct = require("./routes/AdminProduct.js");
 const profilePage = require("./routes/profileRoutes.js");
+const qrRoute = require("./routes/qrRoute.js");
 const secureRoute = require("./middlewares/secureRoute.js");
 const wishlist = require("./routes/wishList.js");
 const video = require("./routes/video.js");
 const mechanicRoutes = require("./routes/mechanicRoutes");
 const search = require("./controllers/Client/SearchController.js");
+const supportTicket = require("./controllers/Client/supportTicket.js")
 
 // const { getMessage, sendMessage } = require( "./controllers/Client/message_controller.js");
 // const secureRoute = require("./middlewares/secureRoute.js");
@@ -81,12 +83,14 @@ app.use("/message", messageRoute);
 app.use("/productPage", productPageRoute);
 app.use("/CategoryPage", categoryRoutes);
 app.use("/productDetails", productDetailRoutes);
+app.use("/QrGenerator", qrRoute);
 app.use("/profile", profilePage);
 app.use("/adminApproval", AdminProduct);
 app.use("/wishlist", wishlist);
 app.use("/video", video);
 app.use("/mechanicList", mechanicRoutes);
 app.use("/searchResult", search);
+app.use("/supportTicket", supportTicket);
 
 //socket setup
 

@@ -7,18 +7,47 @@ const categoryModel = require("../../models/categoryCreation");
 const machine = require("../../models/productUpload");
 const machineRepository = require("../../repositories/machinerepository");
 const searchRepository = require("../../repositories/searchRepository");
+const secureRoute = require("../../middlewares/secureRoute");
+const User = require("../../models/userSIgnUp");
+const AdminProductService = require("../../services/AdminProductService");
 const router = express.Router();
+const jwt = require("jsonwebtoken");
 
 //get home page elements
 router.get("/", async (req, res) => {
   try {
-    const { searchTerms } = req.params;
-    const {latitude,longitude } = req.query;
+    let searchTerms;
+    const { latitude, longitude } = req.query;
+    const token = req.headers.authorization;
+    console.log("token :", token);
+    let userId;
 
+    // ✅ Verify token and get searchTerms
+
+    if (token) {
+      console.log(token);
+      try {
+        const retrivedToken = token.split(" ")[1]; // Extract the token
+        const decoded = jwt.verify(retrivedToken, process.env.JWT_SECRET);
+        userId = decoded.id;
+
+        if (userId) {
+          const user = await User.findById(userId);
+          console.log("userId :", userId);
+          searchTerms = user?.searchTerms || [];
+          console.log("searchTerms :", searchTerms);
+        }
+      } catch (err) {
+        console.log("Token verification failed:", err.message);
+      }
+    }
     let recommentations;
     let machinesCount;
 
-    const locationProducts = await machineRepository.getProductsByLocation(parseInt(longitude), parseInt(latitude));
+    const locationProducts = await machineRepository.getProductsByLocation(
+      parseInt(longitude),
+      parseInt(latitude)
+    );
     const categoryProducts = await machineRepository.getIndustries();
 
     if (categoryProducts.length === 0) {
@@ -28,7 +57,7 @@ router.get("/", async (req, res) => {
         industries: categoryProducts.shuffledIndustries,
       });
     }
-    if (searchTerms) {
+    if (searchTerms.length>0) {
       recommentations = await machineRepository.getSearchTermProducts({
         searchTerms: searchTerms,
         page: "homePage",
@@ -39,6 +68,8 @@ router.get("/", async (req, res) => {
         page: "homePage",
       });
     }
+
+    const banners = await AdminProductService.getbanners();
     // if(location){
     //   const nearbyProducts = machineRepository.getProductsByLocation()
     // }
@@ -62,7 +93,8 @@ router.get("/", async (req, res) => {
     return res.status(200).json({
       category: updatedCategoryProducts,
       recommentedProducts: recommentations,
-      locationProducts : locationProducts
+      locationProducts: locationProducts,
+      banners: banners,
     });
   } catch (err) {
     console.error(err);
@@ -111,7 +143,7 @@ router.get("/search/:searchBar", async (req, res) => {
         } else if (field === "data.brands") {
           query["data.brands"] = { $regex: searchBar, $options: "i" };
         }
-        
+
         const projection = { [field]: 1, _id: 0 };
         const response = await categoryModel.find(query, projection).lean();
 
@@ -138,7 +170,7 @@ router.get("/search/:searchBar", async (req, res) => {
         return updated;
       })
     );
-    console.log(result)
+    console.log(result);
 
     const structuredResult = result.flat();
     return res.json({ structuredResult });

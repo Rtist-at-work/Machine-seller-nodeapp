@@ -34,6 +34,7 @@ const sendMessage = async (req, res) => {
       receiverId,
       senderId
     );
+
     if (senderSocketId) {
       io.to(senderSocketId).emit("newMessage", newMessage);
     }
@@ -41,25 +42,30 @@ const sendMessage = async (req, res) => {
       newMessage.seen = true;
       io.to(receiverSocketId).emit("newMessage", newMessage);
     }
-    res.status(201).json(newMessage);
+    res.status(201).json();
   } catch (error) {
     console.log("Error in sendMessage", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
 const getMessage = async (req, res) => {
   try {
     const UserId = req.user.id;
     const { chatUser } = req.params;
-    console.log("user :", req.user, chatUser);
 
+    // Check if the chat user exists
+    const chatUserExists = await User.findById(chatUser);
+    if (!chatUserExists) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Find the conversation between both users
     let conversation = await Conversation.findOne({
       members: { $all: [UserId, chatUser] },
     }).populate("messages");
 
     if (!conversation) {
-      return res.status(201).json([]);
+      return res.status(200).json([]);
     }
 
     // Extract messages
@@ -78,10 +84,10 @@ const getMessage = async (req, res) => {
       );
     }
 
-    res.status(201).json(messages);
+    return res.status(200).json(messages);
   } catch (error) {
-    console.log("Error in getMessage", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error in getMessage:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -90,32 +96,42 @@ const getUsers = async (req, res) => {
     const userId = req.user.id;
     const selectedUser = req.params.selectedUser;
 
+    // const selectedUserExists = await User.findById(selectedUser);
+    // if (!selectedUserExists) {
+    //   return res.status(404).json({ message: "Selected user not found" });    }
+
     const isUserInChats = await User.exists({
       _id: userId,
-      chats: selectedUser, // Directly checks if selectedUser exists in chats
+      chats: selectedUser,
     });
 
-    const users = await User.findById({ _id: userId })
+    const users = await User.findById(userId)
       .populate("chats", "username email mobile")
       .select("chats -_id")
       .lean();
 
-    let newUser;
-
-    if (selectedUser && !isUserInChats) {
-      newUser = await User.findById(selectedUser)
-        .select("username email mobile")
-        .lean();
-      users.chats.push(newUser);
+    if (!users) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // const users = await User.find().select("username email mobile");
-    Array.isArray(users.chats)
-      ? res.status(200).json(users.chats)
-      : res.status(200).json([users.chats]);
+    if (selectedUser && !isUserInChats) {
+      const newUser = await User.findById(selectedUser)
+        .select("username email mobile")
+        .lean();
+
+      if (newUser) {
+        users.chats = users.chats || [];
+        users.chats.push(newUser);
+      }
+    }
+
+    return res
+      .status(200)
+      .json(Array.isArray(users.chats) ? users.chats : [users.chats]);
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    return res.status(500).json({ message: err.message });
   }
 };
+
 module.exports = { sendMessage, getMessage, getUsers };

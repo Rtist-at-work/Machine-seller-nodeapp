@@ -18,8 +18,8 @@ const CategoryRepository = {
         .find({
           _id: {
             $in: [
-              new ObjectId("67ece8bf67eee96c1d1c9a68"),
-              new ObjectId("67ece90167eee96c1d1c9a6a"),
+              new ObjectId("6828e0fa5b39026cc9569208"),
+              new ObjectId("6828db2e5b39026cc95691ca"),
             ],
           },
         })
@@ -77,14 +77,14 @@ const CategoryRepository = {
       ).lean();
 
       const categoryNames = categories.map((cat) => cat.name);
-      return categoryNames;
+      const industries = await Industry.find({}, "name").lean();
+      return ({categoryNames,industries});
     } catch (err) {
       throw new Error(err.message);
     }
   },
 
   getSubCategories: async (category) => {
-    console.log(category);
     try {
       if (!category) {
         throw new Error("Industry value is needed");
@@ -108,28 +108,29 @@ const CategoryRepository = {
       if (typeof subcategory !== "string") {
         throw new Error("Category must be a valid string");
       }
-  
+
       const subcategoryPattern = new RegExp(`^${subcategory.trim()}$`, "i");
-  
-      const subCategory = await SubCategory.findOne({ name: subcategoryPattern });
-  
+
+      const subCategory = await SubCategory.findOne({
+        name: subcategoryPattern,
+      });
+
       if (!subCategory) {
         throw new Error("Subcategory not found");
       }
-  
+
       const makes = await Brand.find({ subCategory: subCategory._id }).lean();
-  
+
       if (!makes || makes.length === 0) {
         throw new Error("No matching brands found in the database");
       }
-  
+
       return makes.map((make) => make.name); // or adjust based on your schema
     } catch (err) {
       console.error("Error fetching makes:", err.message);
       throw err;
     }
   },
-  
 
   machinesCount: async (industry) => {
     const count = await machines.countDocuments({ industry }); // Query filter corrected

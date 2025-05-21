@@ -30,7 +30,8 @@ router.post("/", mobileOrEmailCheck, async (req, res) => {
         res.status(200).json({
           message: "Logged In Successfully",
           token, // Return the token
-          role:user.role
+          role:user.role,
+          qr : user.qr
         });
       } else {
         console.log("Invalid Password");

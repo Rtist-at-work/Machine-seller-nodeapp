@@ -47,7 +47,7 @@ router.post("/", async (req, res) => {
         });
       }
 
-      for (const brand of sub.brands) {
+      for (const brand of sub.services) {
         const existingBrand = await Brand.findOne({
           name: brand,
           subCategory: subCat._id,

@@ -1,5 +1,6 @@
 const product = require("../models/productUpload");
 const banner = require("../models/AdminBanner");
+const qr = require('../models/QrModel')
 const machineRepository = require("./machinerepository");
 
 const AdminProductRepository = {
@@ -8,10 +9,11 @@ const AdminProductRepository = {
       const pendingProducts = await product
         .find({ adminApproval: status })
         .lean(); // Removed `i`
-      const productWithFiles =
-        machineRepository.getProductFiles(pendingProducts);
+      const productsWithFiles = await machineRepository.getProductFiles(
+        pendingProducts
+      );
 
-      return productWithFiles;
+      return productsWithFiles;
     } catch (err) {
       console.error("Error fetching pending products:", err);
     }
@@ -29,11 +31,20 @@ const AdminProductRepository = {
     } catch (err) {}
   },
   // Upload and store banner images
+ getQr: async () => {
+  try {
+    // This will return plain JavaScript objects instead of Mongoose documents
+    const qrCodes = await qr.find().lean();
+    return qrCodes;
+  } catch (err) {
+    console.error("Error fetching banners:", err);
+    throw err;
+  }
+},
  getbanners: async () => {
   try {
     // This will return plain JavaScript objects instead of Mongoose documents
     const banners = await banner.find().lean();
-    console.log(banners);
     return banners;
   } catch (err) {
     console.error("Error fetching banners:", err);
@@ -44,7 +55,6 @@ const AdminProductRepository = {
   try {
     console.log(id)
     const deletedBanner = await banner.findByIdAndDelete(id);
-console.log(deletedBanner )
     if (!deletedBanner) {
       throw new Error(`Banner with id ${id} not found`);
     }
@@ -84,6 +94,8 @@ console.log(deletedBanner )
     throw err; // Re-throw the error to be caught by the caller
   }
   },
+
+
 };
 
 module.exports = AdminProductRepository;

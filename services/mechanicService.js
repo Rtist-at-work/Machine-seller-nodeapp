@@ -1,13 +1,13 @@
 const mechanicRepository = require("../repositories/mechanicRepository");
 
 const mechanicService = {
-  getMechanics: async (page, limit) => {
+  getMechanics: async (page, limit, userId) => {
     try {
-      const mechanics = await mechanicRepository.getMechanics(page, limit);
-
+      const mechanics = await mechanicRepository.getMechanics(page, limit, userId);
 
       const result = {
         location: {},
+        otherThanIndia: {},
         industry: {},
         category: {},
         mechanics: mechanics,
@@ -15,13 +15,32 @@ const mechanicService = {
 
       mechanics.data.forEach((mech) => {
         // Location: Tamil Nadu => [districts]
-        if (mech.region && mech.district) {
+
+        // Location: India => region: [districts]
+        if (
+          mech.region &&
+          mech.district &&
+          mech.country.toLowerCase() === "india"
+        ) {
           if (!result.location[mech.region]) {
             result.location[mech.region] = new Set();
           }
           result.location[mech.region].add(mech.district);
         }
-      
+
+        // Location: Other than India => country: [region]
+        if (
+          mech.region &&
+          !mech.district &&
+          mech.country.toLowerCase() !== "india"
+        ) {
+          if (!result.otherThanIndia[mech.country]) {
+            console.log("mech.region :", mech.region);
+            result.otherThanIndia[mech.country] = new Set();
+          }
+          result.otherThanIndia[mech.country].add(mech.region);
+        }
+
         // Industry: construction => [categories]
         if (mech.industry && mech.subcategory?.length > 0) {
           if (!result.industry[mech.industry]) {
@@ -30,7 +49,7 @@ const mechanicService = {
           mech.subcategory.forEach((sub) => {
             if (sub.name) {
               result.industry[mech.industry].add(sub.name);
-      
+
               // Category: tools => [subcategories: drills, grinders]
               if (sub.services?.length > 0) {
                 if (!result.category[sub.name]) {
@@ -44,11 +63,13 @@ const mechanicService = {
           });
         }
       });
-      
 
       // Convert sets to arrays
       Object.keys(result.location).forEach((region) => {
         result.location[region] = [...result.location[region]];
+      });
+      Object.keys(result.otherThanIndia).forEach((region) => {
+        result.otherThanIndia[region] = [...result.otherThanIndia[region]];
       });
       Object.keys(result.industry).forEach((industry) => {
         result.industry[industry] = [...result.industry[industry]];
@@ -56,7 +77,7 @@ const mechanicService = {
       Object.keys(result.category).forEach((category) => {
         result.category[category] = [...result.category[category]];
       });
-      console.log("result :", result)
+      console.log("result :", result);
 
       return result;
     } catch (err) {
@@ -84,11 +105,11 @@ const mechanicService = {
       throw error;
     }
   },
-  getPosts: async (MechId,userId) => {
-  console.log("service reached")
+  getPosts: async (MechId, userId) => {
+    console.log("service reached");
 
     try {
-      const posts = await mechanicRepository.getPosts(MechId,userId);
+      const posts = await mechanicRepository.getPosts(MechId, userId);
 
       // const updatedPosts = posts.map((post) => ({
       //   ...post, // Convert Mongoose document to plain object
@@ -111,11 +132,9 @@ const mechanicService = {
       return err;
     }
   },
-  deletemedia: async (postId,
-    userId) => {
+  deletemedia: async (postId, userId) => {
     try {
-      const result = mechanicRepository.deleteMedia(postId,
-        userId);
+      const result = mechanicRepository.deleteMedia(postId, userId);
       return result;
     } catch (err) {
       return err;

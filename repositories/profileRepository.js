@@ -19,12 +19,9 @@ const profileRepository = {
           userProfile[field] = image[0].machineImages[0];
         }
       };
-      
-      await Promise.all([
-        resolveImage("profileImage"),
-        resolveImage("banner"),
-      ]);
-      
+
+      await Promise.all([resolveImage("profileImage"), resolveImage("banner")]);
+
       return userProfile;
     } catch (err) {
       console.error("Error fetching user profile:", err.message);
@@ -40,11 +37,11 @@ const profileRepository = {
           countryCode: userData.countryCode,
           number: userData.mobile,
         },
-        ...(role === "mechanic" && { bio: userData.bio }), // Only add `bio` if role is "mechanic"
+        ...(userData.role === "mechanic" && { bio: userData.bio }), // Only add `bio` if role is "mechanic"
       };
 
       const selectFields =
-        role === "mechanic"
+        userData.role === "mechanic"
           ? "username email mobile bio"
           : "username email mobile"; // Dynamically select fields
 
@@ -74,7 +71,7 @@ const profileRepository = {
         new: true,
         runValidators: true,
       }).select("profileImage -_id");
-      console.log('updatedData :', updateData)
+      console.log("updatedData :", updateData);
 
       if (!userProfile) {
         throw new Error("User not found");

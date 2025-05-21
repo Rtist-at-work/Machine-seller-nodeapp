@@ -18,8 +18,12 @@ const users = [];
 
 // Utility to get socket IDs for sender and receiver
 const getReceiverSocketId = (receiverId, senderId) => {
-  return [users[receiverId], users[senderId]];
+  const getSocketId = (id) =>
+    users.find(user => Object.keys(user)[0] === id)?.[id];
+
+  return [getSocketId(receiverId), getSocketId(senderId)];
 };
+
 
 //helper function to remove users from socket
 
@@ -63,7 +67,8 @@ io.on("connection", (socket) => {
         addUser(userId, socket.id);
 
         console.log("Users list:", users);
-        io.emit("getOnlineUsers", users);
+        const userIds = users.flatMap((user) => Object.keys(user));
+        io.emit("getOnlineUsers", userIds);
       }
     } catch (err) {
       console.log("JWT verification failed:", err.message);
@@ -74,11 +79,21 @@ io.on("connection", (socket) => {
     socket.join(postId);
     console.log(`User ${socket.id} joined post room ${postId}`);
   });
-  console.log(`${socket.id} rooms:`, socket.rooms);
 
   socket.on("leave-post-room", (postId) => {
     socket.leave(postId);
     console.log(`User ${socket.id} left post room ${postId}`);
+  });
+
+  socket.on("join-review-room", (mechId) => {
+    console.log("@review");
+    socket.join(mechId);
+    console.log(`User ${socket.id} joined post room ${mechId}`);
+  });
+
+  socket.on("leave-review-room", (mechId) => {
+    socket.leave(mechId);
+    console.log(`User ${socket.id} left post room ${mechId}`);
   });
 
   socket.on("disconnect", () => {

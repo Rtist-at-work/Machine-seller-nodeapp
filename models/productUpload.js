@@ -1,18 +1,18 @@
 const mongoose = require("mongoose");
-const User = require('./userSIgnUp')
+const User = require("./userSIgnUp");
 
 const productupload = new mongoose.Schema({
-  userId : {
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
-         ref: User,
-         required: true,
+    ref: User,
+    required: true,
   },
   machineImages: {
     type: [String],
     required: true,
   },
-  machineVideos: { 
-    type: [String], 
+  machineVideos: {
+    type: [String],
     required: true,
   },
   industry: {
@@ -31,14 +31,18 @@ const productupload = new mongoose.Schema({
     type: String,
     required: true,
   },
-  yearOfMake : {
-    type : Number,
-    required : true
+  yearOfMake: {
+    type: Number,
+    required: true,
   },
   price: {
     type: String, // Changed to String to allow regex validation
     required: true,
     match: [/^\d+(\.\d{1,2})?$/, "Price must be a valid number"], // Allows integers and decimals (e.g., 100 or 100.50)
+  },
+  priceType: {
+    type: String, // Changed to String to allow regex validation
+    required: true,
   },
   condition: {
     type: String,
@@ -47,12 +51,12 @@ const productupload = new mongoose.Schema({
   contact: {
     countryCode: {
       type: String,
-      required : true,      
+      required: true,
       match: [/^\+\d+$/, "Invalid country code format"], // e.g., +91
     },
     number: {
       type: String,
-      required:true,
+      required: true,
       match: [/^\d{6,15}$/, "Invalid phone number"], // 6 to 15 digits
     },
   },
@@ -74,7 +78,20 @@ const productupload = new mongoose.Schema({
   },
   country: { type: String, required: true },
   region: { type: String, required: true },
-  district: { type: String, required: true, sparse:true },
+  district: {
+    type: String,
+    sparse: true,
+    validate: {
+      validator: function (value) {
+        if (this.country === "India") {
+          return value != null && value.trim() !== "";
+        }
+        return true; // Not required for other countries
+      },
+      message: "District is required when country is India.",
+    },
+  },  
+
   description: {
     type: String,
     required: true,
@@ -88,8 +105,15 @@ const productupload = new mongoose.Schema({
 productupload.index({ "geoCoords.coordinates": "2dsphere" });
 
 // ✅ Index for Fast Filtering
-productupload.index({ category: 1, industry: 1, make:1, country:1, region:1, district:1  });
+productupload.index({
+  category: 1,
+  industry: 1,
+  make: 1,
+  country: 1,
+  region: 1,
+  district: 1,
+});
 
-const uploadSchema = mongoose.model('productupload', productupload);
+const uploadSchema = mongoose.model("productupload", productupload);
 
 module.exports = uploadSchema;

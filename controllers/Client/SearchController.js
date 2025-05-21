@@ -5,8 +5,8 @@ const { Brand, SubCategory } = require("../../models/CategoryModel");
 const user = require("../../models/userSIgnUp"); // Assuming the User model is in this path
 
 // Normalize user input
-const normalize = (str) => str.toLowerCase().trim().replace(/\s+/g, " ");
-console.log("nnn", normalize("textile ringframe")); // This should print: "textile ringframe"
+// const normalize = (str) => str.toLowerCase().trim().replace(/\s+/g, " ");
+// console.log("nnn", normalize("textile ringframe")); // This should print: "textile ringframe"
 
 // GET /search?q=some-term&page=mechanic|product
 router.get("/search", async (req, res) => {
@@ -49,7 +49,15 @@ router.get("/search", async (req, res) => {
 
       // Set up Fuse.js for fuzzy matching on username and organization
       const fuse = new Fuse(mechanicUsers, {
-        keys: ["username", "organization", "services"],
+        keys: [
+          "username",
+          "organization",
+          "services",
+          "industry",
+          "category",
+          "subcategory",
+          "location",
+        ],
         threshold: 0.4,
         includeScore: true,
         ignoreLocation: true,
@@ -58,9 +66,13 @@ router.get("/search", async (req, res) => {
       });
 
       // Perform fuzzy search
-      const results = fuse.search(normalize(userInput));
+      const terms = userInput.split(" ");
+
+      const results = terms.flatMap((term) => fuse.search(term));
+      // const results = fuse.search(normalize(userInput));
       console.log(results);
       const matchedUsers = results.map((r) => r.item).slice(0, 10); // Limit to top 10
+      console.log(matchedUsers.length);
 
       if (matchedUsers.length === 0) {
         return res.status(404).json({ error: "No matching mechanics found" });

@@ -40,26 +40,24 @@ const bannerupload = async (req, res) => {
 };
 const getbanners = async (req, res) => {
   try {
-    const userId = req.user.id;   
-    console.log("banner reached") 
+    const userId = req.user.id;
 
     const result = await AdminProductService.getbanners();
-    console.log(result)
 
-    res.status(200).json({ message: "Banner uploaded successfully",result });
+    res.status(200).json({ message: "Banner uploaded successfully", result });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
 const deleteBanner = async (req, res) => {
   try {
-    const userId = req.user.id;   
-    const {id} = req.body;   
+    const userId = req.user.id;
+    const { id } = req.body;
 
     const result = await AdminProductService.deleteBanner(id);
-    console.log(result)
+    console.log(result);
 
-    res.status(200).json({ message: "Banner deleted successfully",result });
+    res.status(200).json({ message: "Banner deleted successfully", result });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -70,5 +68,5 @@ module.exports = {
   updateAdminApprovalProduct,
   bannerupload,
   getbanners,
-  deleteBanner
+  deleteBanner,
 };
